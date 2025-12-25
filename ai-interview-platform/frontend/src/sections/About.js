@@ -31,22 +31,22 @@ export default function About() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[
             {
-              icon: '⚡',
+              icon: '',
               title: 'Real-Time Evaluation',
               description: 'Get instant feedback and scoring as you progress through the interview.',
             },
             {
-              icon: '🤖',
+              icon: '',
               title: 'AI-Powered Analysis',
               description: 'Advanced algorithms analyze your responses for comprehensive skill assessment.',
             },
             {
-              icon: '📊',
+              icon: '',
               title: 'Detailed Reports',
               description: 'Receive comprehensive reports with insights and recommendations for growth.',
             },
             {
-              icon: '🌍',
+              icon: '',
               title: 'Accessible Anywhere',
               description: 'Interview from anywhere, anytime. No special setup required.',
             },

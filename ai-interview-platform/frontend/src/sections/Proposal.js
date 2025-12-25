@@ -15,7 +15,7 @@ export default function Proposal() {
       {/* Proposal Overview */}
       <div className="bg-white rounded-xl shadow-lg p-8">
         <div className="flex items-center space-x-4 mb-6">
-          <div className="text-5xl">📊</div>
+          <div className="text-5xl"></div>
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Talent Assessment Report</h2>
             <p className="text-gray-600">Generated on December 13, 2025</p>
@@ -75,10 +75,10 @@ export default function Proposal() {
 
         <div className="mt-8 flex space-x-4">
           <button className="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 rounded-lg transition transform hover:scale-105 duration-200">
-            📥 Download Report
+             Download Report
           </button>
           <button className="flex-1 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white font-semibold py-3 rounded-lg transition transform hover:scale-105 duration-200">
-            📧 Share with Employer
+             Share with Employer
           </button>
         </div>
       </div>

@@ -15,7 +15,7 @@ export default function StartInterview() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Interview Setup Card */}
         <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-2xl transition-shadow duration-300">
-          <div className="text-5xl mb-4">🎯</div>
+          <div className="text-5xl mb-4"></div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Technical Interview</h2>
           <p className="text-gray-600 mb-6">Test coding skills, algorithms, and system design with AI evaluation.</p>
 
@@ -41,7 +41,7 @@ export default function StartInterview() {
 
         {/* Behavioral Interview Card */}
         <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-2xl transition-shadow duration-300">
-          <div className="text-5xl mb-4">💬</div>
+          <div className="text-5xl mb-4"></div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Behavioral Interview</h2>
           <p className="text-gray-600 mb-6">Assess soft skills, communication, and problem-solving abilities.</p>
 
@@ -68,7 +68,7 @@ export default function StartInterview() {
 
       {/* Interview Guidelines */}
       <div className="bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6">
-        <h3 className="font-bold text-blue-900 mb-2">📋 Before You Start</h3>
+        <h3 className="font-bold text-blue-900 mb-2"> Before You Start</h3>
         <ul className="text-blue-800 space-y-1 text-sm">
           <li>• Find a quiet environment with good lighting</li>
           <li>• Ensure your microphone and camera are working</li>

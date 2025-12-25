@@ -2,10 +2,10 @@ import React from 'react';
 
 export default function Sidebar({ activeSection, setActiveSection }) {
   const sections = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'interview', label: 'Start Interview', icon: '🎯' },
-    { id: 'proposal', label: 'My Proposal', icon: '📄' },
-    { id: 'about', label: 'About', icon: 'ℹ️' },
+    { id: 'dashboard', label: 'Dashboard', icon: '' },
+    { id: 'interview', label: 'Start Interview', icon: '' },
+    { id: 'proposal', label: 'My Proposal', icon: '' },
+    { id: 'about', label: 'About', icon: '' },
   ];
 
   return (

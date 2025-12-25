@@ -5,15 +5,27 @@ const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
 
-    // Hardcoded validation
-    if (username === 'user' && password === 'user123') {
-      onLogin(username);
-    } else {
-      setError('Invalid username or password. Try: user / user123');
+    try {
+      await onLogin(username, password);
+    } catch (err) {
+      // Error handling is done in parent or here? 
+      // If onLogin throws, we catch it.
+      // But onLogin from useAuth (via parent) likely throws.
+      console.error("Login error", err);
+      if (err.response && err.response.data) {
+        const data = err.response.data;
+        // Flatten detail or message or non_field_errors
+        const msg = data.detail || data.message || JSON.stringify(data);
+        setError(msg);
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Invalid username or password.');
+      }
     }
   };
 

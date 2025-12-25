@@ -1,13 +1,13 @@
 import React, { useState, forwardRef } from 'react';
 
-const Signup = forwardRef(({ onSignup, onSwitchToLogin, users, setUsers }, ref) => {
+const Signup = forwardRef(({ onSignup, onSwitchToLogin }, ref) => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -22,16 +22,26 @@ const Signup = forwardRef(({ onSignup, onSwitchToLogin, users, setUsers }, ref) 
       return;
     }
 
-    if (users.some(u => u.username === username)) {
-      setError('Username already exists');
-      return;
+    try {
+      await onSignup({ username, email, password, confirm_password: confirmPassword });
+    } catch (err) {
+      console.error("Signup error", err);
+      if (err.response && err.response.data) {
+        const data = err.response.data;
+        console.log("Signup error data:", data);
+        let msg = '';
+        if (typeof data === 'object') {
+          msg = Object.entries(data).map(([key, value]) => `${key}: ${value}`).join(', ');
+        } else {
+          msg = String(data);
+        }
+        setError(msg || 'Registration failed.');
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError('Registration failed. Please try again.');
+      }
     }
-
-    const newUser = { username, email, password, name: username };
-    setUsers(prev => [newUser, ...prev]);
-
-    // Auto-login after signup
-    onSignup(username);
   };
 
   return (

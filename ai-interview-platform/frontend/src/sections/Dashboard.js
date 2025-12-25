@@ -11,7 +11,7 @@ export default function Dashboard({ userName, setActiveSection }) {
           id: 1,
           title: 'Start AI Interview',
           description: 'Begin a real-time AI-assisted interview with instant scoring and feedback.',
-          icon: '🎯',
+          icon: '',
           color: 'from-blue-500 to-cyan-500',
           action: 'Start Interview',
           onClick: () => setActiveSection('interview'),
@@ -20,7 +20,7 @@ export default function Dashboard({ userName, setActiveSection }) {
           id: 2,
           title: 'View My Proposal',
           description: 'Review your personalized talent assessment proposal with detailed insights.',
-          icon: '📄',
+          icon: '',
           color: 'from-purple-500 to-pink-500',
           action: 'View Proposal',
           onClick: () => setActiveSection('proposal'),
@@ -29,7 +29,7 @@ export default function Dashboard({ userName, setActiveSection }) {
           id: 3,
           title: 'Learn About Platform',
           description: 'Discover how our AI-powered platform revolutionizes interview and skill evaluation.',
-          icon: 'ℹ️',
+          icon: '',
           color: 'from-green-500 to-emerald-500',
           action: 'Learn More',
           onClick: () => setActiveSection('about'),
@@ -44,7 +44,7 @@ export default function Dashboard({ userName, setActiveSection }) {
       {/* Welcome Header */}
       <div className="animate-fadeIn">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-2">
-          Welcome back, <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{userName}</span> 👋
+          Welcome back, <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{userName}</span> 
         </h1>
         <p className="text-gray-600 text-lg">AI-Powered Real-Time Interview & Skill Evaluation Platform</p>
       </div>
