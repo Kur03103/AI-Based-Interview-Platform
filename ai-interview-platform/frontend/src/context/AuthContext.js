@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
             const token = localStorage.getItem('access_token');
             if (token) {
                 try {
-                    const response = await api.get('/auth/me/');
+                    const response = await api.get('/api/auth/me/');
                     setAuth({
                         user: response.data,
                         isAuthenticated: true,
@@ -44,14 +44,14 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (username, password) => {
         try {
-            const response = await api.post('/auth/login/', { username, password });
+            const response = await api.post('/api/auth/login/', { username, password });
             const { access, refresh } = response.data;
 
             localStorage.setItem('access_token', access);
             localStorage.setItem('refresh_token', refresh);
 
             // Fetch user details immediately
-            const userResponse = await api.get('/auth/me/');
+            const userResponse = await api.get('/api/auth/me/');
 
             setAuth({
                 user: userResponse.data,
@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }) => {
 
     const register = async (userData) => {
         try {
-            await api.post('/auth/register/', userData);
+            await api.post('/api/auth/register/', userData);
             // After register, you might want to auto-login or redirect to login.
             // Following requirement: "either auto-login... OR redirect to /login"
             // Start simple: Redirect to login (return true indicating success)
@@ -86,8 +86,6 @@ export const AuthProvider = ({ children }) => {
             isAuthenticated: false,
             loading: false,
         });
-        // Optional backend logout call
-        api.post('/auth/logout/').catch(err => console.warn("Backend logout warning", err));
     };
 
     return (

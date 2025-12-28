@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base URL from environment or default
-const BASE_URL = 'http://127.0.0.1:8000/api';
+const BASE_URL = 'http://127.0.0.1:8000';
 
 const api = axios.create({
     baseURL: BASE_URL,
@@ -35,7 +35,7 @@ api.interceptors.response.use(
             const refreshToken = localStorage.getItem('refresh_token');
             if (refreshToken) {
                 try {
-                    const response = await axios.post(`${BASE_URL}/auth/token/refresh/`, {
+                    const response = await axios.post(`${BASE_URL}/api/auth/token/refresh/`, {
                         refresh: refreshToken,
                     });
 
@@ -50,11 +50,11 @@ api.interceptors.response.use(
                     // Clear tokens and redirect to login if refresh fails
                     localStorage.removeItem('access_token');
                     localStorage.removeItem('refresh_token');
-                    window.location.href = '/login';
+                    window.location.href = '/';
                 }
             } else {
                 // No refresh token available
-                window.location.href = '/login';
+                window.location.href = '/';
             }
         }
         return Promise.reject(error);

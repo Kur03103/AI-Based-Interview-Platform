@@ -7,9 +7,17 @@ import StartInterview from '../sections/StartInterview';
 import Proposal from '../sections/Proposal';
 import About from '../sections/About';
 
+import { useNavigate } from 'react-router-dom';
+
 const Dashboard = () => {
     const { auth, logout } = useAuth();
+    const navigate = useNavigate();
     const [activeSection, setActiveSection] = useState('dashboard');
+
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+    };
 
     const renderContent = () => {
         switch (activeSection) {
@@ -32,7 +40,7 @@ const Dashboard = () => {
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
-            <Navbar userName={auth.user?.username || 'User'} onSignOut={logout} />
+            <Navbar userName={auth.user?.username || 'User'} onSignOut={handleLogout} />
 
             <div className="flex flex-1 pt-0 md:pt-0">
                 <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
