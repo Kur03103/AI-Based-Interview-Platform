@@ -1,0 +1,48 @@
+{
+  "pages": [
+    {
+      "index": 0,
+      "markdown": "AAYUSH SAPKOTA\n\n+977 9807185800\n\n9 Gongabu, Kathmandu\n\naayushaj3103@gmail.com\n\n# CAREER OBJECTIVE\n\nEstablish a successful and fulfilling career as a web developer by utilizing strong technical expertise, analytical thinking, and creative problem-solving skills to design and develop innovative, user-friendly web solutions. Dedicated to transforming complex data into valuable insights that support business objectives and drive growth. Focused on continuous learning, collaboration, and contributing to the long-term success and advancement of the organization through high-quality work.\n\n# EDUCATIONAL BACKGROUND\n\n|  BSc (Hons) Computing | 2023 - Present  |\n| --- | --- |\n|  Islington College |   |\n|  London Metropolitan University |   |\n|  Kamal Marg, Kamalpokhari, Kathmandu |   |\n|  A Levels | 2020 - 2022  |\n|  Budhanilkantha School |   |\n|  CIE (Cambridge International Education) |   |\n|  Budhanilkantha, Kathmandu |   |\n|  SEE | 2020  |\n|  Budhanilkantha School |   |\n|  NEB (National Examination Board) |   |\n|  Budhanilkantha, Kathmandu |   |\n\n# SKILLS\n\n## Technical Skills:\n\nProgramming Language: Python, Java, JavaScript, C#\nFrameworks: Jakarta EE, Asp.net\nApplications and Software: Eclipse, Jupyter Notebook, Rider, IDLE, Blue J\nOperating Systems: Windows\n\n## Soft Skills:\n\nCommunication: Have the ability to clearly and effectively convey ideas and information to others.\nTime Management: Capable of organizing and prioritizing tasks to efficiently meet deadlines.\nInterpersonal skills: Have the ability to build positive relationships and work well with others through collaboration and understanding.\n\n# PROJECTS\n\n## Academic Projects\n\n### Lington Store\n\nProgramming Language: Java\nFramework: Jakarta EE\nSoftware: Eclipse IDE\n\nDescription of the project: Developed a dynamic eCommerce grocery web application (Lington Store) using Java (Eclipse), JSP/Servlets, and MySQL, featuring user authentication, product browsing, shopping cart, secure payments, admin inventory/order management, and responsive design tailored for Kathmandu-based customers.",
+      "images": [],
+      "tables": [],
+      "hyperlinks": [
+        "https://github.com/DibashSigdel/LingtonStore"
+      ],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2340,
+        "width": 1655
+      }
+    },
+    {
+      "index": 1,
+      "markdown": "# Land Renting System\n\nProgramming Language: Python\n\nSoftware: IDLE\n\nDescription of the project: Developed a Land Renting System in Python that allows users to rent and return multiple land plots, manage rental durations, process payments, and generate detailed bills. The system supports multiple rentals per user, ensures accurate payment handling, and provides clear transaction records through automated billing.\n\n# GUI System\n\nProgramming Language: Java\n\nSoftware: Blue J\n\nDescription of the project: Developed a GUI-based application in Java using BlueJ to manage data of teachers, lecturers, and tutors, featuring exception handling and input validation. The system allows users to add, update, and view records through a user-friendly interface.\n\n# Personal Project\n\n## Printer E-Commerce Website\n\nProgramming Language: HTML, CSS, Javascript\n\nSoftware: VsCode\n\nDescription of the project: A user-friendly eCommerce website offering a wide range of high-quality printers from leading brands. Customers can easily browse, compare, and purchase printers for home, office, or commercial use, with detailed product information, competitive prices, and reliable customer support.\n\n# TRAINING AND CERTIFICATIONS\n\nAWS Academy Graduate - AWS Academy Data Engineering\n\nAWS Academy Graduate - AWS Academy Cloud Foundations\n\nAWS Academy Graduate - AWS Academy Machine Learning Foundations\n\nAWS Academy Graduate - AWS Academy Machine Learning for Natural Language Processing",
+      "images": [],
+      "tables": [],
+      "hyperlinks": [
+        "https://github.com/Kur03103/Land-Renting-System",
+        "https://github.com/Kur03103/GUI-System",
+        "https://github.com/Kur03103/Printer",
+        "https://www.credly.com/badges/3ec15612-672b-45aa-b794-939c8f260257",
+        "https://www.credly.com/org/amazon-web-services/badge/aws-academy-graduate-aws-academy-cloud-foundations",
+        "https://www.credly.com/org/amazon-web-services/badge/aws-academy-graduate-aws-academy-machine-learning-foundations",
+        "https://www.credly.com/org/amazon-web-services/badge/aws-academy-graduate-aws-academy-machine-learning-for-natural-language-processing"
+      ],
+      "header": null,
+      "footer": null,
+      "dimensions": {
+        "dpi": 200,
+        "height": 2340,
+        "width": 1655
+      }
+    }
+  ],
+  "model": "mistral-ocr-latest",
+  "document_annotation": null,
+  "usage_info": {
+    "pages_processed": 2,
+    "doc_size_bytes": 100084
+  }
+}

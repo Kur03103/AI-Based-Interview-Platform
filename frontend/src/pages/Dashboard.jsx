@@ -6,6 +6,7 @@ import DashboardHome from '../sections/Dashboard';
 import StartInterview from '../sections/StartInterview';
 import Proposal from '../sections/Proposal';
 import About from '../sections/About';
+import ResumeUpload from '../components/ResumeUpload';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -29,6 +30,8 @@ const Dashboard = () => {
                 return <Proposal />;
             case 'about':
                 return <About />;
+            case 'resume':
+                return <ResumeUpload />;
             default:
                 return (
                     <div className="bg-white p-12 rounded-xl shadow-sm border border-gray-100 text-center text-gray-500">

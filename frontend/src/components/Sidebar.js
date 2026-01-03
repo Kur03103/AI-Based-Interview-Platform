@@ -2,10 +2,11 @@ import React from 'react';
 
 export default function Sidebar({ activeSection, setActiveSection }) {
   const sections = [
-    { id: 'dashboard', label: 'Dashboard', icon: '' },
-    { id: 'interview', label: 'Start Interview', icon: '' },
-    { id: 'proposal', label: 'My Proposal', icon: '' },
-    { id: 'about', label: 'About', icon: '' },
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'interview', label: 'Start Interview', icon: '🎤' },
+    { id: 'resume', label: 'Upload Resume', icon: '📄' },
+    { id: 'proposal', label: 'My Proposal', icon: '📋' },
+    { id: 'about', label: 'About', icon: 'ℹ️' },
   ];
 
   return (
@@ -15,11 +16,10 @@ export default function Sidebar({ activeSection, setActiveSection }) {
           <button
             key={section.id}
             onClick={() => setActiveSection(section.id)}
-            className={`w-full text-left px-4 py-3 rounded-lg font-medium transition duration-200 flex items-center space-x-3 ${
-              activeSection === section.id
-                ? 'bg-indigo-600 text-white shadow-lg'
-                : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-            }`}
+            className={`w-full text-left px-4 py-3 rounded-lg font-medium transition duration-200 flex items-center space-x-3 ${activeSection === section.id
+              ? 'bg-indigo-600 text-white shadow-lg'
+              : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              }`}
           >
             <span className="text-xl">{section.icon}</span>
             <span>{section.label}</span>

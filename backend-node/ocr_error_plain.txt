@@ -1,0 +1,6 @@
+Error Name: Error
+Error Message: Mistral API Error: 400 Bad Request - {"object":"error","message":"Image content must be a URL (starting with 'https') or base64 encoded image (starting with 'data:image/<format>;base64,<image-base64>'). Received: data:application/pdf;base64,JVBERi0xLjQKJfbk/N8KMS...ovU2l6ZSAzNjIKPj4Kc3RhcnR4cmVmCjkyNjg3CiUlRU9GCg==","type":"invalid_request_invalid_args","param":null,"code":"3051"}
+Stack: Error: Mistral API Error: 400 Bad Request - {"object":"error","message":"Image content must be a URL (starting with 'https') or base64 encoded image (starting with 'data:image/<format>;base64,<image-base64>'). Received: data:application/pdf;base64,JVBERi0xLjQKJfbk/N8KMS...ovU2l6ZSAzNjIKPj4Kc3RhcnR4cmVmCjkyNjg3CiUlRU9GCg==","type":"invalid_request_invalid_args","param":null,"code":"3051"}
+    at file:///E:/Desktop/Interview%20Bloom/ai-interview-platform/backend-node/server.js:98:19
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+Full Error: {}
