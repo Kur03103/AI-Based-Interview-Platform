@@ -33,11 +33,53 @@ const upload = multer({
 });
 
 // Hard-coded OCR prompt
-const OCR_PROMPT = `Extract all visible text from this document exactly as it appears.
-Do not summarize.
-Do not infer or hallucinate missing content.
-Preserve original wording, order, and line breaks.
-Return only the extracted text.`;
+const RESUME_EXTRACTION_PROMPT = `
+    Analyze the given OCR-extracted CV text and extract structured information.
+
+    RETURN ONLY A VALID JSON OBJECT. NO MARKDOWN, NO CODE BLOCKS, NO EXTRA TEXT.
+    
+    The JSON structure must be exactly as follows:
+{
+    "personal_info": {
+        "first_name": "string",
+            "last_name": "string",
+                "email": "string",
+                    "phone": "string",
+                        "linkedin_url": "string",
+                            "github_url": "string",
+                                "portfolio_url": "string"
+    },
+    "education": [
+        {
+            "degree": "string",
+            "institution": "string",
+            "start_date": "string",
+            "end_date": "string",
+            "gpa": "string"
+        }
+    ],
+        "skills": [
+            {
+                "name": "string",
+                "category": "string"
+            }
+        ],
+            "achievements": [
+                {
+                    "title": "string",
+                    "description": "string",
+                    "date": "string"
+                }
+            ]
+}
+
+RULES:
+- Extract ONLY information present in the text.
+    - Split full name into first_name and last_name.
+    - If a field is missing, use null or empty string.
+    - For Education dates, try to extract Year or Month / Year.
+    - Categorize skills if possible(e.g. "Language", "Tool").
+    `;
 
 // OCR extraction endpoint
 app.post('/api/ocr/extract', upload.single('file'), async (req, res) => {
@@ -58,26 +100,12 @@ app.post('/api/ocr/extract', upload.single('file'), async (req, res) => {
         console.log('Starting OCR request...');
         console.log('API Key present:', !!process.env.MISTRAL_KEY);
 
-        const payload = {
-            model: 'pixtral-12b-2409',
-            messages: [
-                {
-                    role: 'user',
-                    content: [
-                        { type: 'text', text: OCR_PROMPT },
-                        { type: 'image_url', imageUrl: `data:${mimeType};base64,${base64File.substring(0, 50)}...` }
-                    ]
-                }
-            ]
-        };
-        console.log('Payload structure:', JSON.stringify(payload, null, 2));
-
         // Call Mistral OCR via raw fetch
         const response = await fetch('https://api.mistral.ai/v1/ocr', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.MISTRAL_KEY}`
+                'Authorization': `Bearer ${process.env.MISTRAL_KEY} `
             },
             body: JSON.stringify({
                 model: 'mistral-ocr-latest',
@@ -90,7 +118,7 @@ app.post('/api/ocr/extract', upload.single('file'), async (req, res) => {
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Mistral API Error: ${response.status} ${response.statusText} - ${errorText}`);
+            throw new Error(`Mistral API Error: ${response.status} ${response.statusText} - ${errorText} `);
         }
 
         const data = await response.json();
@@ -108,14 +136,51 @@ app.post('/api/ocr/extract', upload.single('file'), async (req, res) => {
         }
 
         // Clean up uploaded file
-        fs.unlinkSync(filePath);
+        try {
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        } catch (cleanupError) {
+            console.warn('Warning: Failed to delete upload file:', cleanupError.message);
+        }
 
         // Return extracted text
-        res.json({ text: extractedText });
+        // res.json({ text: extractedText });
+
+        // Step 2: Send extracted text to LLM for parsing
+        console.log('Sending extracted text to LLM for parsing...');
+
+        const chatResponse = await fetch('https://api.mistral.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.MISTRAL_KEY} `
+            },
+            body: JSON.stringify({
+                model: 'mistral-large-latest',
+                messages: [
+                    { role: 'system', content: RESUME_EXTRACTION_PROMPT },
+                    { role: 'user', content: extractedText }
+                ]
+            })
+        });
+
+        if (!chatResponse.ok) {
+            const chatErrorText = await chatResponse.text();
+            throw new Error(`Mistral Chat API Error: ${chatResponse.status} ${chatResponse.statusText} - ${chatErrorText} `);
+        }
+
+        const chatData = await chatResponse.json();
+        const parsedText = chatData.choices[0].message.content;
+
+        console.log('LLM Parsing Complete.');
+
+        // Return the parsed and structured text
+        res.json({ text: parsedText });
 
     } catch (error) {
         console.error('OCR Error:', error);
-        const errorLog = `Error Name: ${error.name}\nError Message: ${error.message}\nStack: ${error.stack}\nFull Error: ${JSON.stringify(error, null, 2)}`;
+        const errorLog = `Error Name: ${error.name} \nError Message: ${error.message} \nStack: ${error.stack} \nFull Error: ${JSON.stringify(error, null, 2)} `;
         fs.writeFileSync('ocr_error_plain.txt', errorLog);
 
         // Clean up file if it exists

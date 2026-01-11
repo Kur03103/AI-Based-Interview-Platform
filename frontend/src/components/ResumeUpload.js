@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import api from '../api/axios';
 
 export default function ResumeUpload() {
     const [file, setFile] = useState(null);
@@ -7,6 +8,7 @@ export default function ResumeUpload() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [fileName, setFileName] = useState('');
+    const [resumeData, setResumeData] = useState(null);
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
@@ -38,7 +40,30 @@ export default function ResumeUpload() {
                 },
             });
 
-            setExtractedText(response.data.text);
+            let responseText = response.data.text;
+            let parsedData;
+
+            try {
+                // Check if response is an object (already parsed by axios)
+                if (typeof responseText === 'object') {
+                    parsedData = responseText;
+                } else {
+                    // It's a string, try to clean it if it has markdown code blocks
+                    const cleanedText = responseText.replace(/```json\n?|\n?```/g, '').trim();
+                    parsedData = JSON.parse(cleanedText);
+                }
+            } catch (e) {
+                console.warn('JSON Parse failed, falling back to raw text:', e);
+                parsedData = null;
+            }
+
+            if (parsedData) {
+                setResumeData(parsedData);
+                setExtractedText(formatResumeToText(parsedData));
+            } else {
+                // Fallback to raw text if parsing fails completely
+                setExtractedText(response.data.text);
+            }
         } catch (err) {
             console.error('Upload error:', err);
             setError(err.response?.data?.error || 'Failed to extract text. Please try again.');
@@ -51,7 +76,99 @@ export default function ResumeUpload() {
         setFile(null);
         setFileName('');
         setExtractedText('');
+        setResumeData(null);
         setError('');
+    };
+
+
+    const handleSaveToSystem = async () => {
+        if (!resumeData) return;
+
+        // Flatten the data to match the backend Serializer expectations
+        const payload = {
+            ...resumeData.personal_info, // Spread personal_info fields to top level
+            education: resumeData.education,
+            skills: resumeData.skills,
+            achievements: resumeData.achievements
+        };
+
+        try {
+            // Use the authenticated 'api' instance instead of raw 'axios'
+            // The baseURL is already set to http://127.0.0.1:8000 in api/axios.js
+            const response = await api.post('/api/cv/save/', payload);
+            alert('CV saved to system successfully! Person ID: ' + response.data.person_id);
+        } catch (err) {
+            console.error('Save error:', err);
+            // Better error message handling
+            let errorMessage = err.message;
+            if (err.response && err.response.data) {
+                if (err.response.data.details) {
+                    errorMessage = JSON.stringify(err.response.data.details, null, 2);
+                } else if (err.response.data.error) {
+                    errorMessage = err.response.data.error;
+                } else {
+                    errorMessage = JSON.stringify(err.response.data, null, 2);
+                }
+            }
+            alert('Failed to save CV:\n' + errorMessage);
+        }
+    };
+
+    const formatResumeToText = (data) => {
+        if (!data) return '';
+        let text = '';
+
+        // Personal Info
+        if (data.personal_info) {
+            text += 'Personal Information\n';
+            const pi = data.personal_info;
+            if (pi.first_name || pi.last_name) text += `Name: ${pi.first_name || ''} ${pi.last_name || ''}\n`;
+            if (pi.email) text += `Email: ${pi.email}\n`;
+            if (pi.phone) text += `Phone: ${pi.phone}\n`;
+            if (pi.linkedin_url) text += `LinkedIn: ${pi.linkedin_url}\n`;
+            if (pi.github_url) text += `GitHub: ${pi.github_url}\n`;
+            if (pi.portfolio_url) text += `Portfolio: ${pi.portfolio_url}\n`;
+            text += '\n';
+        }
+
+        // Education
+        if (data.education && data.education.length > 0) {
+            text += 'Education\n';
+            data.education.forEach(edu => {
+                if (edu.degree) text += `${edu.degree}\n`;
+                if (edu.institution) text += `${edu.institution} (${edu.start_date || ''} - ${edu.end_date || ''})\n`;
+                if (edu.gpa) text += `GPA: ${edu.gpa}\n`;
+                text += '\n';
+            });
+        }
+
+        // Skills
+        if (data.skills && data.skills.length > 0) {
+            text += 'Skills\n';
+            const categories = {};
+            data.skills.forEach(skill => {
+                const cat = skill.category || 'Other';
+                if (!categories[cat]) categories[cat] = [];
+                categories[cat].push(skill.name);
+            });
+            Object.keys(categories).forEach(cat => {
+                text += `${cat}: ${categories[cat].join(', ')}\n`;
+            });
+            text += '\n';
+        }
+
+        // Achievements
+        if (data.achievements && data.achievements.length > 0) {
+            text += 'Achievements & Certifications\n';
+            data.achievements.forEach(ach => {
+                text += `• ${ach.title}`;
+                if (ach.date) text += ` (${ach.date})`;
+                text += '\n';
+                if (ach.description) text += `  ${ach.description}\n`;
+            });
+        }
+
+        return text;
     };
 
     return (
@@ -111,8 +228,8 @@ export default function ResumeUpload() {
                             onClick={handleUpload}
                             disabled={!file || loading}
                             className={`flex-1 py-3 px-6 rounded-lg font-semibold text-white transition-all duration-200 ${loading || !file
-                                    ? 'bg-gray-400 cursor-not-allowed'
-                                    : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transform hover:scale-105 shadow-lg'
+                                ? 'bg-gray-400 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 transform hover:scale-105 shadow-lg'
                                 }`}
                         >
                             {loading ? (
@@ -174,6 +291,14 @@ export default function ResumeUpload() {
                         >
                             📋 Copy to Clipboard
                         </button>
+                        {resumeData && (
+                            <button
+                                onClick={handleSaveToSystem}
+                                className="ml-4 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 shadow-md"
+                            >
+                                💾 Save to System
+                            </button>
+                        )}
                     </div>
                     <div className="bg-gray-50 rounded-lg p-6 max-h-96 overflow-y-auto border border-gray-200">
                         <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono">

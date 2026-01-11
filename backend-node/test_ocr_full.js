@@ -1,10 +1,15 @@
 
 import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const apiKey = process.env.MISTRAL_KEY;
-const filePath = 'e:/Desktop/Interview Bloom/ai-interview-platform/frontend/public/logo192.png';
+const filePath = path.join(__dirname, '../frontend/public/logo192.png');
 
 async function testOCRFull() {
     try {
