@@ -84,9 +84,36 @@ export default function ResumeUpload() {
     const handleSaveToSystem = async () => {
         if (!resumeData) return;
 
-        // Flatten the data to match the backend Serializer expectations
+        // Helper to clean up URL fields
+        const sanitizeUrl = (url) => {
+            if (!url) return null;
+            if (typeof url !== 'string') return null;
+            const lower = url.trim().toLowerCase();
+            if (['null', 'none', 'n/a', 'not provided', ''].includes(lower)) return null;
+
+            // If it looks like a URL but is missing protocol, add https
+            if (!url.match(/^https?:\/\//i) && url.match(/^[\w.-]+\.[a-z]{2,}/i)) {
+                return 'https://' + url.trim();
+            }
+
+            // If it doesn't look like a URL at all, return null to avoid validation error
+            try {
+                new URL(url.trim().startsWith('http') ? url.trim() : 'https://' + url.trim());
+                return url.trim();
+            } catch (e) {
+                return null;
+            }
+        };
+
+        // Flatten the data and sanitize URLs
         const payload = {
-            ...resumeData.personal_info, // Spread personal_info fields to top level
+            ...resumeData.personal_info,
+
+            // Sanitize specific URL fields
+            linkedin_url: sanitizeUrl(resumeData.personal_info?.linkedin_url),
+            github_url: sanitizeUrl(resumeData.personal_info?.github_url),
+            portfolio_url: sanitizeUrl(resumeData.personal_info?.portfolio_url),
+
             education: resumeData.education,
             skills: resumeData.skills,
             achievements: resumeData.achievements
@@ -94,7 +121,6 @@ export default function ResumeUpload() {
 
         try {
             // Use the authenticated 'api' instance instead of raw 'axios'
-            // The baseURL is already set to http://127.0.0.1:8000 in api/axios.js
             const response = await api.post('/api/cv/save/', payload);
             alert('CV saved to system successfully! Person ID: ' + response.data.person_id);
         } catch (err) {
