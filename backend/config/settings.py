@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     # Local apps
     "accounts",
     "candidates",
+    "interview",
 ]
 
 MIDDLEWARE = [
@@ -153,3 +154,5 @@ CORS_ALLOW_ALL_ORIGINS = True
 # ]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY")

@@ -25,7 +25,18 @@ const Dashboard = () => {
             case 'dashboard':
                 return <DashboardHome userName={auth.user?.username || 'User'} setActiveSection={setActiveSection} />;
             case 'interview':
-                return <StartInterview />;
+                return (
+                    <div className="flex flex-col items-center justify-center h-full p-8 bg-white rounded-xl shadow-sm">
+                        <h2 className="text-2xl font-bold mb-4 text-gray-800">Start AI Interview</h2>
+                        <p className="mb-6 text-gray-600">Click below to begin your audio interview session.</p>
+                        <button
+                            onClick={() => navigate('/interview')}
+                            className="bg-indigo-600 text-white py-3 px-8 rounded-lg hover:bg-indigo-700 transition duration-300 font-semibold shadow-md"
+                        >
+                            Start Interview
+                        </button>
+                    </div>
+                );
             case 'proposal':
                 return <Proposal />;
             case 'about':
