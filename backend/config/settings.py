@@ -156,3 +156,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY")
+
+# Media files for generated TTS audio
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
