@@ -77,7 +77,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# Using SQLite for development (no PostgreSQL needed)
+# Using SQLite for development (no PostgreSQL needed) 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',

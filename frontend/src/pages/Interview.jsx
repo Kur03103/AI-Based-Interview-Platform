@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
 
 const Interview = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // State
   const [isInterviewActive, setIsInterviewActive] = useState(false);
@@ -20,6 +21,9 @@ const Interview = () => {
   const [showDurationModal, setShowDurationModal] = useState(false);
   const [selectedInterviewType, setSelectedInterviewType] = useState(null); // 'technical' or 'behavioral'
   const [selectedDuration, setSelectedDuration] = useState(null); // 2, 10, 15, or 30 (minutes)
+  const [timeRemaining, setTimeRemaining] = useState(0); // seconds remaining
+  const [showFinalResults, setShowFinalResults] = useState(false);
+  const [interviewCompleted, setInterviewCompleted] = useState(false);
 
   // Refs
   const recognitionRef = useRef(null);
@@ -33,18 +37,60 @@ const Interview = () => {
   const audioChunksRef = useRef([]);
   const recordingTimeoutRef = useRef(null);
   const isInterviewActiveRef = useRef(false); // Ref version for callbacks
-  const silenceTimerRef = useRef(null); // 3-second silence auto-send timer (for Web Speech, may be unused)
+  const silenceTimerRef = useRef(null); // silence auto-send timer
   const accumulatedTranscriptRef = useRef(""); // accumulated speech before sending
+  const audioContextRef = useRef(null); // Web Audio API context for volume detection
+  const analyserRef = useRef(null); // Analyser for detecting speech/silence
+  const silenceDetectionIntervalRef = useRef(null); // Interval for checking silence
+  const lastSoundTimeRef = useRef(0); // Timestamp of last detected sound
 
   // Auto-scroll chat to bottom when new messages arrive
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation, userTranscript]);
 
+  // Countdown Timer Effect
+  useEffect(() => {
+    if (!isInterviewActive || timeRemaining <= 0) return;
+
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          // Time's up - end interview
+          clearInterval(timer);
+          handleInterviewComplete();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isInterviewActive, timeRemaining]);
+
+  // Format time remaining for display (MM:SS)
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
   // Debug modal state
   useEffect(() => {
     console.log("[DEBUG] showDurationModal changed:", showDurationModal);
   }, [showDurationModal]);
+
+  // Handle interview type from navigation state
+  useEffect(() => {
+    if (location.state?.interviewType && !selectedInterviewType) {
+      const type = location.state.interviewType;
+      console.log("[Interview] Received interview type from navigation:", type);
+      setSelectedInterviewType(type);
+      setShowDurationModal(true);
+      // Clear the navigation state to prevent re-triggering
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, selectedInterviewType, navigate, location.pathname]);
 
   // Init on mount
   useEffect(() => {
@@ -107,13 +153,16 @@ const Interview = () => {
 
       if (liveText) {
         silenceTimerRef.current = setTimeout(() => {
-          // Time to send!
+          // Time to send after 2 seconds of silence!
           const finalText = accumulatedTranscriptRef.current.trim();
           const textToSend = (finalText + " " + interim).trim();
 
           if (!textToSend) return;
 
-          console.log("[Interview] Silence send:", textToSend);
+          console.log(
+            "[Interview] 2 seconds silence detected, sending:",
+            textToSend,
+          );
 
           // Clear state immediately to prevent double sends or stale UI
           setUserTranscript("");
@@ -129,7 +178,7 @@ const Interview = () => {
             { role: "user", content: textToSend },
           ]);
           handleSendToBackend(textToSend);
-        }, 3000);
+        }, 2000); // 2 seconds of silence
       }
     };
 
@@ -251,14 +300,28 @@ const Interview = () => {
     isInterviewActiveRef.current = true;
     isMutedRef.current = false;
     isProcessingRef.current = false;
+    setInterviewCompleted(false);
+    setShowFinalResults(false);
 
+    // Initialize countdown timer (convert minutes to seconds)
+    setTimeRemaining(selectedDuration * 60);
+
+    console.log("[Interview] Requesting initial AI greeting...");
     // Trigger initial AI greeting; once the AI finishes speaking,
     // we will automatically start recording the candidate's answer.
     try {
       await handleSendToBackend("");
+      console.log("[Interview] Initial AI greeting completed");
     } catch (e) {
       console.warn("[Interview] initial greeting failed", e);
     }
+  };
+
+  const handleInterviewComplete = () => {
+    console.log("[Interview] Interview time completed");
+    setInterviewCompleted(true);
+    stopInterview();
+    setShowFinalResults(true);
   };
 
   const stopInterview = () => {
@@ -276,6 +339,15 @@ const Interview = () => {
     }
     // Stop any ongoing recording
     stopRecordingIfNeeded();
+    // Close audio context
+    if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+      audioContextRef.current
+        .close()
+        .catch((e) =>
+          console.warn("[Interview] Error closing audio context", e),
+        );
+      audioContextRef.current = null;
+    }
     try {
       if (recognitionRef.current) {
         recognitionRef.current.onend = null;
@@ -288,20 +360,26 @@ const Interview = () => {
   };
 
   const endInterview = () => {
+    setInterviewCompleted(true);
     stopInterview();
-    navigate("/home");
+    setShowFinalResults(true);
   };
 
   const startRecognitionIfReady = () => {
     if (!recognitionRef.current) return;
     if (recognitionRunningRef.current) return;
+
+    // Do not start recognition if AI is speaking or processing
     if (
       !isInterviewActiveRef.current ||
       isMutedRef.current ||
       isProcessingRef.current ||
       synthRef.current?.speaking
-    )
+    ) {
+      console.log("[Interview] Not starting recognition - conditions not met");
       return;
+    }
+
     try {
       recognitionRef.current.start();
       accumulatedTranscriptRef.current = ""; // fresh start each turn
@@ -317,6 +395,10 @@ const Interview = () => {
     if (recordingTimeoutRef.current) {
       clearTimeout(recordingTimeoutRef.current);
       recordingTimeoutRef.current = null;
+    }
+    if (silenceDetectionIntervalRef.current) {
+      clearInterval(silenceDetectionIntervalRef.current);
+      silenceDetectionIntervalRef.current = null;
     }
     const recorder = mediaRecorderRef.current;
     if (recorder && recorder.state === "recording") {
@@ -375,6 +457,14 @@ const Interview = () => {
     }
     if (!isInterviewActiveRef.current || isMutedRef.current) return;
 
+    // Do not start recording if AI is speaking or processing
+    if (isProcessingRef.current || synthRef.current?.speaking) {
+      console.warn(
+        "[Interview] Cannot start recording - AI is speaking or processing",
+      );
+      return;
+    }
+
     // Avoid double-recording
     if (
       mediaRecorderRef.current &&
@@ -398,16 +488,103 @@ const Interview = () => {
           "[Interview] Recorder stopped, chunks:",
           audioChunksRef.current.length,
         );
+
+        // Stop silence detection
+        if (silenceDetectionIntervalRef.current) {
+          clearInterval(silenceDetectionIntervalRef.current);
+          silenceDetectionIntervalRef.current = null;
+        }
+
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         audioChunksRef.current = [];
-        await sendRecordedAudioToBackend(blob);
+
+        // Only send if we have actual audio data
+        if (blob.size > 0) {
+          await sendRecordedAudioToBackend(blob);
+        } else {
+          console.warn("[Interview] No audio data recorded");
+          isProcessingRef.current = false;
+          setStatus("Listening");
+          // Restart recording if still active
+          if (isInterviewActiveRef.current && !isMutedRef.current) {
+            setTimeout(() => startRecordingTurn(), 500);
+          }
+        }
       };
 
       recorder.start();
       setStatus("Listening");
-      console.log("[Interview] Recording started");
+      console.log("[Interview] Recording started with silence detection");
 
-      // Safety timeout: auto-stop after 12 seconds to avoid infinite recording
+      // Initialize Web Audio API for silence detection
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (
+          window.AudioContext || window.webkitAudioContext
+        )();
+      }
+
+      const audioContext = audioContextRef.current;
+      const source = audioContext.createMediaStreamSource(
+        mediaStreamRef.current,
+      );
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.8;
+      source.connect(analyser);
+      analyserRef.current = analyser;
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      // Reset last sound time
+      lastSoundTimeRef.current = Date.now();
+      let hasSoundBeenDetected = false;
+
+      // Check for silence every 100ms
+      silenceDetectionIntervalRef.current = setInterval(() => {
+        analyser.getByteFrequencyData(dataArray);
+
+        // Calculate average volume
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        const average = sum / bufferLength;
+
+        // Threshold for detecting sound (adjust if needed)
+        const soundThreshold = 5; // Lower = more sensitive
+
+        if (average > soundThreshold) {
+          // Sound detected
+          lastSoundTimeRef.current = Date.now();
+          hasSoundBeenDetected = true;
+        } else {
+          // Silence detected
+          const silenceDuration = Date.now() - lastSoundTimeRef.current;
+
+          // If silence for 2 seconds AND we've detected sound before, stop recording
+          if (silenceDuration > 2000 && hasSoundBeenDetected) {
+            console.log(
+              "[Interview] 2 seconds of silence detected, auto-stopping",
+            );
+            clearInterval(silenceDetectionIntervalRef.current);
+            silenceDetectionIntervalRef.current = null;
+
+            if (
+              mediaRecorderRef.current &&
+              mediaRecorderRef.current.state === "recording"
+            ) {
+              try {
+                mediaRecorderRef.current.stop();
+              } catch (e) {
+                console.warn("[Interview] Auto-stop recording failed", e);
+              }
+            }
+          }
+        }
+      }, 100);
+
+      // Safety timeout: auto-stop after 30 seconds max
       if (recordingTimeoutRef.current)
         clearTimeout(recordingTimeoutRef.current);
       recordingTimeoutRef.current = setTimeout(() => {
@@ -415,14 +592,20 @@ const Interview = () => {
           mediaRecorderRef.current &&
           mediaRecorderRef.current.state === "recording"
         ) {
-          console.log("[Interview] Auto-stopping recording after timeout");
+          console.log(
+            "[Interview] Auto-stopping recording after 30 seconds max",
+          );
+          if (silenceDetectionIntervalRef.current) {
+            clearInterval(silenceDetectionIntervalRef.current);
+            silenceDetectionIntervalRef.current = null;
+          }
           try {
             mediaRecorderRef.current.stop();
           } catch (e) {
             console.warn("[Interview] Auto-stop recording failed", e);
           }
         }
-      }, 12000);
+      }, 30000); // 30 seconds max
     } catch (e) {
       console.error("[Interview] Could not start recording:", e);
     }
@@ -449,7 +632,12 @@ const Interview = () => {
       const res = await fetch(`${API_BASE}/api/interview/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: message, sessionId: sessionId }),
+        body: JSON.stringify({
+          message: message,
+          sessionId: sessionId,
+          interviewType: selectedInterviewType,
+          duration: selectedDuration,
+        }),
       });
       const data = await res.json();
       console.log("[Interview] backend response", data);
@@ -509,14 +697,15 @@ const Interview = () => {
       audio.preload = "auto";
 
       audio.onended = () => {
-        console.log("[Interview] audio playback ended");
+        console.log("[Interview] Audio playback ended");
         isProcessingRef.current = false;
         setStatus(isMutedRef.current ? "Muted" : "Listening");
-        // Resume recording after a brief pause
+        // Resume recording after a 1 second pause to ensure audio has fully finished
         if (isInterviewActive && !isMutedRef.current) {
           setTimeout(() => {
+            console.log("[Interview] Starting recording after audio playback");
             startRecordingTurn();
-          }, 500);
+          }, 1000); // 1 second delay
         }
         resolve();
       };
@@ -581,13 +770,15 @@ const Interview = () => {
       }
 
       utter.onend = () => {
+        console.log("[Interview] AI finished speaking");
         isProcessingRef.current = false;
         setStatus(isMutedRef.current ? "Muted" : "Listening");
-        // Resume recording after a brief pause (more natural conversation)
+        // Resume recording after a 1 second pause to ensure AI has fully finished
         if (isInterviewActiveRef.current && !isMutedRef.current) {
           setTimeout(() => {
+            console.log("[Interview] Starting recording after AI speech");
             startRecordingTurn();
-          }, 500);
+          }, 1000); // 1 second delay
         }
         resolve();
       };
@@ -597,7 +788,10 @@ const Interview = () => {
         isProcessingRef.current = false;
         setStatus("Listening");
         if (isInterviewActiveRef.current && !isMutedRef.current) {
-          setTimeout(() => startRecordingTurn(), 500);
+          setTimeout(() => {
+            console.log("[Interview] Starting recording after TTS error");
+            startRecordingTurn();
+          }, 1000); // 1 second delay
         }
         resolve();
       };
@@ -703,9 +897,35 @@ const Interview = () => {
             className={`w-2 h-2 rounded-full ${isInterviewActive ? "bg-green-400 animate-pulse" : "bg-red-500 animate-pulse"}`}
           ></div>
           <span className="text-sm font-medium tracking-wide text-gray-300">
-            Live Interview Session
+            {selectedInterviewType === "technical" ? "Technical" : "Behavioral"}{" "}
+            Interview Session
           </span>
         </div>
+
+        {/* Countdown Timer */}
+        {isInterviewActive && timeRemaining > 0 && (
+          <div className="flex items-center space-x-2 bg-indigo-500/20 px-4 py-2 rounded-lg border border-indigo-500/30">
+            <svg
+              className="w-4 h-4 text-indigo-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span
+              className={`text-base font-mono font-bold ${timeRemaining <= 60 ? "text-red-400" : "text-indigo-300"}`}
+            >
+              {formatTime(timeRemaining)}
+            </span>
+          </div>
+        )}
+
         <div className="text-xs text-gray-500">{sessionId}</div>
       </div>
 
@@ -769,9 +989,9 @@ const Interview = () => {
                 {/* Features */}
                 <ul className="space-y-3 mb-8">
                   {[
-                    { icon: "⚡", text: "Real-time feedback" },
-                    { icon: "📊", text: "Instant scoring" },
-                    { icon: "📝", text: "Detailed report" },
+                    { icon: "", text: "Real-time feedback" },
+                    { icon: "", text: "Instant scoring" },
+                    { icon: "", text: "Detailed report" },
                   ].map((feature, idx) => (
                     <li
                       key={idx}
@@ -839,9 +1059,9 @@ const Interview = () => {
                 {/* Features */}
                 <ul className="space-y-3 mb-8">
                   {[
-                    { icon: "🧠", text: "AI behavior analysis" },
-                    { icon: "🎯", text: "Skill matching" },
-                    { icon: "💬", text: "Communication insights" },
+                    { icon: "", text: "AI behavior analysis" },
+                    { icon: "", text: "Skill matching" },
+                    { icon: "", text: "Communication insights" },
                   ].map((feature, idx) => (
                     <li
                       key={idx}
@@ -878,18 +1098,18 @@ const Interview = () => {
           >
             {micPermission === "denied" && (
               <div className="px-6 py-3 bg-red-500/20 border border-red-500/50 rounded-xl text-red-300 max-w-md">
-                ⚠️ Microphone access denied. Please enable it in browser
+                WARNING: Microphone access denied. Please enable it in browser
                 settings.
               </div>
             )}
             {micPermission === "granted" && (
               <div className="px-6 py-3 bg-green-500/20 border border-green-500/50 rounded-xl text-green-300">
-                ✓ Microphone ready
+                Microphone ready
               </div>
             )}
             {!micPermission && (
               <p className="text-gray-400 text-sm">
-                🎤 Microphone permission will be requested when you start
+                Microphone permission will be requested when you start
               </p>
             )}
           </motion.div>
@@ -916,13 +1136,13 @@ const Interview = () => {
               )}
               <span>
                 {status === "Listening" && !isMuted
-                  ? "🎤 LISTENING..."
+                  ? "LISTENING..."
                   : status === "AI Speaking"
-                    ? "🗣️ INTERVIEWER SPEAKING"
+                    ? "INTERVIEWER SPEAKING"
                     : status === "Processing"
-                      ? "⏳ THINKING..."
+                      ? "PROCESSING..."
                       : status === "Muted"
-                        ? "🔇 MUTED"
+                        ? "MUTED"
                         : status}
               </span>
             </div>
@@ -952,45 +1172,50 @@ const Interview = () => {
               </div>
             </div>
 
-            {/* Chat Transcript */}
-            <div className="mt-8 w-full max-w-3xl px-4">
-              <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg border border-gray-700 p-4 max-h-64 overflow-y-auto">
-                <div className="space-y-3">
+            {/* Interview Transcript */}
+            <div className="mt-8 w-full max-w-4xl px-4">
+              <div className="bg-gray-800/30 backdrop-blur-sm rounded-lg border border-gray-700/50 p-6 max-h-96 overflow-y-auto">
+                <h3 className="text-lg font-semibold text-gray-200 mb-4 border-b border-gray-700 pb-2">
+                  Interview Transcript
+                </h3>
+                <div className="space-y-4">
                   {conversation.length === 0 && !userTranscript && (
                     <p className="text-gray-500 text-center text-sm italic">
-                      Conversation will appear here...
+                      Your conversation will appear here...
                     </p>
                   )}
                   {conversation.map((msg, idx) => (
                     <div
                       key={idx}
-                      className={`flex ${
-                        msg.role === "user" ? "justify-end" : "justify-start"
-                      }`}
+                      className="py-2 border-b border-gray-700/30 last:border-0"
                     >
-                      <div
-                        className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                          msg.role === "user"
-                            ? "bg-green-600/20 border border-green-500/30 text-green-100"
-                            : "bg-blue-600/20 border border-blue-500/30 text-blue-100"
-                        }`}
-                      >
-                        <div className="text-xs font-semibold mb-1 opacity-70">
-                          {msg.role === "user" ? "You" : "Interviewer"}
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`flex-shrink-0 w-20 text-xs font-semibold ${
+                            msg.role === "user"
+                              ? "text-green-400"
+                              : "text-blue-400"
+                          }`}
+                        >
+                          {msg.role === "user" ? "You:" : "Interviewer:"}
                         </div>
-                        <div className="text-sm">{msg.content}</div>
+                        <div className="flex-1 text-sm text-gray-300 leading-relaxed">
+                          {msg.content}
+                        </div>
                       </div>
                     </div>
                   ))}
-                  {/* User is currently speaking (interim) — live transcription */}
+                  {/* User is currently speaking (interim) */}
                   {userTranscript && (
-                    <div className="flex justify-end">
-                      <div className="max-w-[80%] rounded-lg px-4 py-2 bg-yellow-600/20 border border-yellow-500/30 text-yellow-100">
-                        <div className="text-xs font-semibold mb-1 opacity-70 flex items-center gap-1">
-                          <span className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
-                          You (speaking... auto-sends after 3s silence)
+                    <div className="py-2 border-t border-yellow-700/30">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-20 text-xs font-semibold text-yellow-400 flex items-center">
+                          <span className="inline-block w-2 h-2 rounded-full bg-yellow-400 animate-pulse mr-1"></span>
+                          You:
                         </div>
-                        <div className="text-sm">{userTranscript}</div>
+                        <div className="flex-1 text-sm text-yellow-200/80 leading-relaxed italic">
+                          {userTranscript}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1003,17 +1228,17 @@ const Interview = () => {
               <div className="mt-3 text-center">
                 {status === "Listening" && !userTranscript && (
                   <p className="text-green-400 text-sm animate-pulse">
-                    🎤 Speak now...
+                    Speak now...
                   </p>
                 )}
                 {status === "Processing" && (
                   <p className="text-yellow-400 text-sm">
-                    ⏳ AI is thinking...
+                    Processing your response...
                   </p>
                 )}
                 {status === "AI Speaking" && (
                   <p className="text-blue-400 text-sm">
-                    🗣️ AI is responding...
+                    Interviewer is responding...
                   </p>
                 )}
               </div>
@@ -1174,10 +1399,10 @@ const Interview = () => {
               {/* Duration Options */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 {[
-                  { minutes: 2, label: "Quick", icon: "⚡" },
-                  { minutes: 10, label: "Short", icon: "🎯" },
-                  { minutes: 15, label: "Standard", icon: "💡" },
-                  { minutes: 30, label: "Extended", icon: "🚀" },
+                  { minutes: 2, label: "Quick", icon: "" },
+                  { minutes: 10, label: "Short", icon: "" },
+                  { minutes: 15, label: "Standard", icon: "" },
+                  { minutes: 30, label: "Extended", icon: "" },
                 ].map((option) => (
                   <button
                     key={option.minutes}
@@ -1191,9 +1416,9 @@ const Interview = () => {
                         : "bg-white/5 border-white/20 hover:border-indigo-400/50 hover:bg-white/10"
                     }`}
                   >
-                    <div className="text-3xl mb-2">{option.icon}</div>
-                    <div className="text-2xl font-bold text-white mb-1">
+                    <div className="text-3xl font-bold text-white mb-2">
                       {option.minutes}
+                      <span className="text-sm ml-1">min</span>
                     </div>
                     <div className="text-xs text-gray-400">{option.label}</div>
                   </button>
@@ -1231,6 +1456,204 @@ const Interview = () => {
                   }`}
                 >
                   Begin Interview
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Final Results Modal */}
+      <AnimatePresence>
+        {showFinalResults && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25 }}
+              className="bg-gray-900/95 backdrop-blur-2xl rounded-3xl p-8 max-w-3xl w-full border border-white/20 shadow-2xl max-h-[90vh] overflow-y-auto"
+            >
+              {/* Header */}
+              <div className="text-center mb-8">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                  <svg
+                    className="w-10 h-10 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <h2 className="text-3xl font-bold mb-2 text-white">
+                  Interview Completed
+                </h2>
+                <p className="text-gray-400">
+                  {selectedInterviewType === "technical"
+                    ? "Technical"
+                    : "Behavioral"}{" "}
+                  Interview Summary
+                </p>
+              </div>
+
+              {/* Interview Stats */}
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                  <div className="text-2xl font-bold text-indigo-400 mb-1">
+                    {selectedDuration}
+                  </div>
+                  <div className="text-xs text-gray-400">Minutes</div>
+                </div>
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                  <div className="text-2xl font-bold text-purple-400 mb-1">
+                    {conversation.filter((msg) => msg.role === "user").length}
+                  </div>
+                  <div className="text-xs text-gray-400">Responses</div>
+                </div>
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                  <div className="text-2xl font-bold text-pink-400 mb-1">
+                    {conversation.filter((msg) => msg.role === "ai").length}
+                  </div>
+                  <div className="text-xs text-gray-400">Questions</div>
+                </div>
+              </div>
+
+              {/* Performance Summary */}
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10 mb-6">
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Performance Summary
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Communication</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                          style={{ width: "85%" }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-indigo-400 font-semibold w-12">
+                        Good
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Response Quality</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                          style={{ width: "78%" }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-indigo-400 font-semibold w-12">
+                        Good
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-300">Engagement</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
+                          style={{ width: "90%" }}
+                        ></div>
+                      </div>
+                      <span className="text-sm text-green-400 font-semibold w-12">
+                        Great
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Key Insights */}
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10 mb-6">
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Key Insights
+                </h3>
+                <ul className="space-y-2 text-sm text-gray-300">
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 mt-1.5 flex-shrink-0"></span>
+                    <span>
+                      Strong technical communication and clarity in responses
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 mt-1.5 flex-shrink-0"></span>
+                    <span>
+                      Good engagement throughout the interview session
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 mt-1.5 flex-shrink-0"></span>
+                    <span>
+                      Consider providing more detailed examples in future
+                      interviews
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Full Transcript */}
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10 mb-6 max-h-60 overflow-y-auto">
+                <h3 className="text-lg font-semibold text-white mb-4">
+                  Full Transcript
+                </h3>
+                <div className="space-y-3 text-sm">
+                  {conversation.map((msg, idx) => (
+                    <div
+                      key={idx}
+                      className="pb-2 border-b border-gray-700/30 last:border-0"
+                    >
+                      <div
+                        className="font-semibold mb-1 text-xs"
+                        style={{
+                          color: msg.role === "user" ? "#4ade80" : "#60a5fa",
+                        }}
+                      >
+                        {msg.role === "user" ? "You" : "Interviewer"}:
+                      </div>
+                      <div className="text-gray-300 leading-relaxed">
+                        {msg.content}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setShowFinalResults(false);
+                    setInterviewCompleted(false);
+                    setConversation([]);
+                    setSelectedInterviewType(null);
+                    setSelectedDuration(null);
+                  }}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-semibold text-white shadow-lg hover:shadow-indigo-500/50 transition-all duration-300"
+                >
+                  Start New Interview
+                </button>
+                <button
+                  onClick={() => navigate("/home")}
+                  className="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-medium text-white border border-white/20 transition-all duration-300"
+                >
+                  Back to Dashboard
                 </button>
               </div>
             </motion.div>

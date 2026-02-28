@@ -13,6 +13,8 @@ class InterviewView(APIView):
     Accepts POST JSON with:
       - session_id (required)
       - message (user's spoken text)
+      - interview_type (optional: 'technical' or 'behavioral')
+      - duration (optional: interview duration in minutes)
     
     Returns JSON: { "ai_response": "<AI reply text>" }
     """
@@ -21,8 +23,10 @@ class InterviewView(APIView):
     def post(self, request):
         user_message = request.data.get('message', '').strip()
         session_id = request.data.get('sessionId') or request.data.get('session_id')
+        interview_type = request.data.get('interviewType') or request.data.get('interview_type', 'technical')
+        duration = request.data.get('duration', 15)
 
-        print(f"[Interview API] Received - sessionId: {session_id}, message: '{user_message}'")
+        print(f"[Interview API] Received - sessionId: {session_id}, type: {interview_type}, duration: {duration}, message: '{user_message}'")
 
         if not session_id:
             return Response(
@@ -37,19 +41,32 @@ class InterviewView(APIView):
         if not isinstance(session.history, list):
             session.history = []
 
-        # HARDCODED SYSTEM PROMPT (as specified)
-        system_prompt = (
-            "You are a professional technical interviewer conducting a live audio interview. "
-            "Speak clearly and naturally like a human on a call. "
-            "Ask one question at a time. "
-            "Wait for the candidate's response. "
-            "Give brief feedback. "
-            "Then move to the next question. "
-            "Do not give long explanations. "
-            "Do not mention AI, models, or prompts. "
-            "If the user is silent, politely ask them to repeat. "
-            "End the interview politely when requested."
-        )
+        # SYSTEM PROMPTS based on interview type
+        if interview_type == 'behavioral':
+            system_prompt = (
+                "You are a professional behavioral interviewer conducting a live audio interview. "
+                "Speak clearly and naturally like a human on a call. "
+                "Ask behavioral and situational questions about teamwork, leadership, conflict resolution, and problem-solving. "
+                "Use the STAR method (Situation, Task, Action, Result) framework. "
+                "Ask one question at a time and wait for the candidate's response. "
+                "Give brief encouraging feedback before moving to the next question. "
+                "Focus on soft skills, communication, and past experiences. "
+                "Keep responses concise and professional. "
+                "Do not mention AI, models, or prompts. "
+                "End the interview politely when requested."
+            )
+        else:  # default to technical
+            system_prompt = (
+                "You are a professional technical interviewer conducting a live audio interview. "
+                "Speak clearly and naturally like a human on a call. "
+                "Ask technical questions about programming, algorithms, data structures, and system design. "
+                "Ask one question at a time and wait for the candidate's response. "
+                "Give brief constructive feedback before moving to the next question. "
+                "Keep responses concise and to the point. "
+                "Do not give long explanations or hints unless asked. "
+                "Do not mention AI, models, or prompts. "
+                "End the interview politely when requested."
+            )
 
         # Build messages for Mistral API
         messages = [{"role": "system", "content": system_prompt}]
@@ -119,7 +136,8 @@ class InterviewView(APIView):
 
             return Response({
                 "ai_response": ai_response,
-                "session_id": session_id
+                "session_id": session_id,
+                "interview_type": interview_type
             }, status=status.HTTP_200_OK)
 
         except requests.exceptions.RequestException as e:

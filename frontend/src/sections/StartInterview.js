@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -37,6 +38,13 @@ const CheckIcon = () => (
 );
 
 export default function StartInterview() {
+  const navigate = useNavigate();
+
+  const handleStartInterview = (type) => {
+    // Navigate to interview page
+    navigate("/interview", { state: { interviewType: type } });
+  };
+
   return (
     <motion.div
       variants={containerVariants}
@@ -122,6 +130,7 @@ export default function StartInterview() {
           </div>
 
           <motion.button
+            onClick={() => handleStartInterview("technical")}
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold py-4 rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30"
@@ -191,6 +200,7 @@ export default function StartInterview() {
           </div>
 
           <motion.button
+            onClick={() => handleStartInterview("behavioral")}
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-4 rounded-xl transition-all duration-200 shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30"
