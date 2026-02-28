@@ -4,29 +4,31 @@ from rest_framework import status
 from django.conf import settings
 from .models import InterviewSession
 import requests
-import json
-import os
-import uuid
-from time import time
-from gtts import gTTS
 from rest_framework.permissions import AllowAny
 
 class InterviewView(APIView):
-    permission_classes = [AllowAny]
-    """API endpoint for the audio interview flow.
-
+    """
+    API endpoint for the audio interview flow.
+    
     Accepts POST JSON with:
       - session_id (required)
-      - user_message (optional) -- if empty or missing, the endpoint will return an initial greeting
-
-    Returns JSON: { "response_text": "<AI reply>" }
+      - message (user's spoken text)
+    
+    Returns JSON: { "ai_response": "<AI reply text>" }
     """
+    permission_classes = [AllowAny]  # No authentication required for now
+    
     def post(self, request):
-        user_message = request.data.get('user_message', '')
-        session_id = request.data.get('session_id')
+        user_message = request.data.get('message', '').strip()
+        session_id = request.data.get('sessionId') or request.data.get('session_id')
+
+        print(f"[Interview API] Received - sessionId: {session_id}, message: '{user_message}'")
 
         if not session_id:
-            return Response({"error": "session_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "session_id is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Get or create session
         session, created = InterviewSession.objects.get_or_create(session_id=session_id)
@@ -35,105 +37,189 @@ class InterviewView(APIView):
         if not isinstance(session.history, list):
             session.history = []
 
-        # System Prompt to guide the interviewer persona
+        # HARDCODED SYSTEM PROMPT (as specified)
         system_prompt = (
-            "You are a friendly and professional technical interviewer named 'Bloom'.\n"
-            "Speak concisely in 1-3 short sentences, ask one question at a time, and be encouraging.\n"
-            "Start with a warm greeting when the interview begins and then ask the first question.\n"
+            "You are a professional technical interviewer conducting a live audio interview. "
+            "Speak clearly and naturally like a human on a call. "
+            "Ask one question at a time. "
+            "Wait for the candidate's response. "
+            "Give brief feedback. "
+            "Then move to the next question. "
+            "Do not give long explanations. "
+            "Do not mention AI, models, or prompts. "
+            "If the user is silent, politely ask them to repeat. "
+            "End the interview politely when requested."
         )
 
-        # Build messages for the model
-        api_messages = [{"role": "system", "content": system_prompt}]
-        api_messages.extend(session.history[-10:])  # keep short history
-
-        # If no user_message provided, request an initial greeting from the model
+        # Build messages for Mistral API
+        messages = [{"role": "system", "content": system_prompt}]
+        
+        # Add conversation history (keep last 10 exchanges)
+        messages.extend(session.history[-10:])
+        
+        # Add current user message (or request initial greeting)
         if not user_message:
-            api_messages.append({"role": "user", "content": "Please provide a short friendly greeting to start the interview and then ask the candidate the first question."})
+            messages.append({
+                "role": "user", 
+                "content": "Please greet the candidate and start the interview with the first question."
+            })
         else:
-            api_messages.append({"role": "user", "content": user_message})
+            messages.append({"role": "user", "content": user_message})
 
         try:
+            # Get Mistral API key
             api_key = getattr(settings, 'MISTRAL_API_KEY', None)
             if not api_key:
-                return Response({"error": "MISTRAL_API_KEY not configured"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                print("[Interview API] ERROR: MISTRAL_API_KEY not configured")
+                return Response(
+                    {"error": "MISTRAL_API_KEY not configured in backend"}, 
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
+            # Call Mistral API
             headers = {
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
-                "Accept": "application/json",
             }
 
-            # Call Mistral chat endpoint (best-effort payload). Adjust if your provider differs.
             payload = {
                 "model": "mistral-small-latest",
-                "messages": api_messages,
+                "messages": messages,
                 "temperature": 0.7,
-                "max_tokens": 250
+                "max_tokens": 200
             }
 
-            resp = requests.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=payload, timeout=30)
+            print(f"[Interview API] Calling Mistral API...")
+            resp = requests.post(
+                "https://api.mistral.ai/v1/chat/completions", 
+                headers=headers, 
+                json=payload, 
+                timeout=30
+            )
             resp.raise_for_status()
             resp_json = resp.json()
 
-            # Best-effort parsing for expected response shape
-            ai_text = None
-            if isinstance(resp_json, dict):
-                # Try common shapes
-                if 'choices' in resp_json and len(resp_json['choices']) > 0:
-                    choice = resp_json['choices'][0]
-                    # Chat-style
-                    if 'message' in choice and isinstance(choice['message'], dict):
-                        ai_text = choice['message'].get('content')
-                    # Direct text
-                    elif 'text' in choice:
-                        ai_text = choice.get('text')
-                # Some providers return outputs -> [{"content": "..."}]
-                if not ai_text and 'outputs' in resp_json and len(resp_json['outputs']) > 0:
-                    out = resp_json['outputs'][0]
-                    if isinstance(out, dict):
-                        ai_text = out.get('content') or out.get('text')
+            # Extract AI response
+            ai_response = None
+            if 'choices' in resp_json and len(resp_json['choices']) > 0:
+                choice = resp_json['choices'][0]
+                if 'message' in choice and isinstance(choice['message'], dict):
+                    ai_response = choice['message'].get('content', '').strip()
 
-            if not ai_text:
-                ai_text = "(The interviewer is silent — please try again.)"
+            if not ai_response:
+                ai_response = "I apologize, I didn't catch that. Could you please repeat?"
 
-            # Update session history
+            print(f"[Interview API] AI Response: {ai_response}")
+
+            # Update conversation history
             if user_message:
                 session.history.append({"role": "user", "content": user_message})
-            session.history.append({"role": "assistant", "content": ai_text})
+            session.history.append({"role": "assistant", "content": ai_response})
             session.save()
 
-            # Generate TTS audio (gTTS) and save temporarily
-            audio_url = None
-            try:
-                media_root = getattr(settings, 'MEDIA_ROOT', None)
-                if not media_root:
-                    media_root = os.path.join(settings.BASE_DIR, 'media')
-                out_dir = os.path.join(media_root, 'interview_audio')
-                os.makedirs(out_dir, exist_ok=True)
-
-                # Create a safe filename
-                fname = f"interview_{session_id}_{int(time())}_{uuid.uuid4().hex[:8]}.mp3"
-                out_path = os.path.join(out_dir, fname)
-
-                print(f"[InterviewView] Generating TTS at {out_path}")
-                tts = gTTS(text=ai_text, lang='en', slow=False)
-                tts.save(out_path)
-
-                # Build absolute URL for the frontend to fetch
-                media_url = getattr(settings, 'MEDIA_URL', '/media/')
-                audio_url = request.build_absolute_uri(os.path.join(media_url, 'interview_audio', fname))
-                print(f"[InterviewView] TTS audio URL: {audio_url}")
-            except Exception as e:
-                print(f"[InterviewView] TTS generation failed: {e}")
-                audio_url = None
-
-            return Response({"response_text": ai_text, "audio_url": audio_url}, status=status.HTTP_200_OK)
+            return Response({
+                "ai_response": ai_response,
+                "session_id": session_id
+            }, status=status.HTTP_200_OK)
 
         except requests.exceptions.RequestException as e:
-            print(f"Mistral API Error: {e}")
-            if getattr(e, 'response', None) is not None:
-                print(e.response.text)
-            return Response({"error": "Failed to communicate with AI interviewer"}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            print(f"[Interview API] Mistral API Error: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                print(f"[Interview API] Response text: {e.response.text}")
+            return Response(
+                {"error": "Failed to communicate with AI interviewer. Please try again."}, 
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
         except Exception as e:
-            print(f"Internal Server Error: {e}")
-            return Response({"error": "Internal Server Error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            print(f"[Interview API] Internal Error: {e}")
+            return Response(
+                {"error": "Internal server error"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class SpeechToTextView(APIView):
+    """
+    Accepts raw audio from the frontend and returns a text transcription.
+
+    This decouples browser speech recognition from the interview logic so the
+    interview can run reliably even when `window.SpeechRecognition` is not
+    available or is failing (e.g. Chrome network errors).
+    """
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        audio_file = request.FILES.get("audio")
+        session_id = request.data.get("sessionId") or request.data.get("session_id")
+
+        if not audio_file:
+            return Response(
+                {"error": "Missing 'audio' file in request."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Use Groq's Whisper-large-v3 model via their OpenAI-compatible API.
+        api_key = getattr(settings, "GROQ_API_KEY", None)
+        if not api_key:
+            # Fail fast with a clear error so the developer can configure the key.
+            return Response(
+                {
+                    "error": "Speech-to-text API key not configured.",
+                    "details": "Set GROQ_API_KEY in your backend environment to enable transcription.",
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        try:
+            # Call Groq Whisper-large-v3 transcription endpoint.
+            files = {
+                "file": (audio_file.name, audio_file.read(), audio_file.content_type),
+            }
+            data = {
+                "model": "whisper-large-v3",
+                "language": "en",
+            }
+
+            resp = requests.post(
+                "https://api.groq.com/openai/v1/audio/transcriptions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                },
+                files=files,
+                data=data,
+                timeout=60,
+            )
+            resp.raise_for_status()
+            resp_json = resp.json()
+            text = (resp_json.get("text") or "").strip()
+
+            if not text:
+                return Response(
+                    {
+                        "error": "Transcription service returned empty text.",
+                    },
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+
+            print(f"[SpeechToText] sessionId={session_id} text='{text}'")
+
+            return Response({"text": text, "session_id": session_id}, status=status.HTTP_200_OK)
+
+        except requests.exceptions.RequestException as e:
+            print(f"[SpeechToText] STT API error: {e}")
+            if hasattr(e, "response") and e.response is not None:
+                print(f"[SpeechToText] Response text: {e.response.text}")
+            return Response(
+                {
+                    "error": "Failed to transcribe audio.",
+                    "details": "Upstream STT provider request failed.",
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+        except Exception as e:
+            print(f"[SpeechToText] Internal error: {e}")
+            return Response(
+                {"error": "Internal server error during transcription."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

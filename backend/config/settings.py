@@ -77,16 +77,25 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# Using SQLite for development (no PostgreSQL needed)
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'postgres'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', '3103@Sapkota'),
-        'HOST': os.getenv('DB_HOST', 'localhost'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# PostgreSQL config (commented out for now)
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('DB_NAME', 'postgres'),
+#         'USER': os.getenv('DB_USER', 'postgres'),
+#         'PASSWORD': os.getenv('DB_PASSWORD', '3103@Sapkota'),
+#         'HOST': os.getenv('DB_HOST', 'localhost'),
+#         'PORT': os.getenv('DB_PORT', '5432'),
+#     }
+# }
 
 
 # Password validation
@@ -155,7 +164,14 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Mistral API Configuration
+# If you don't set MISTRAL_API_KEY in the environment, this fallback key will be used.
+# Replace this with your own key or set the env var in production.
 MISTRAL_API_KEY = os.environ.get("MISTRAL_API_KEY")
+
+# Groq API key for Whisper-based speech-to-text
+# You can also override this via the GROQ_API_KEY env var.
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 # Media files for generated TTS audio
 MEDIA_URL = '/media/'
