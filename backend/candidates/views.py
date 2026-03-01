@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from django.db import transaction
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
@@ -226,5 +228,91 @@ class ResumeAnalysisView(APIView):
                     "error": "Failed to analyze resume",
                     "details": error_message
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class JobRecommendationsView(APIView):
+    """
+    Get job recommendations based on candidate skills
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    
+    def post(self, request):
+        """
+        Get personalized job recommendations
+        """
+        try:
+            from .recommendation_service import get_recommendation_service
+            
+            # Get candidate skills from request
+            skills = request.data.get('skills', '')
+            top_n = request.data.get('top_n', 5)
+            
+            if not skills:
+                return Response({
+                    "error": "Skills are required"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Get recommendation service
+            rec_service = get_recommendation_service()
+            
+            # Get recommendations
+            recommendations = rec_service.get_job_recommendations(skills, top_n)
+            
+            # Get skill insights
+            skill_insights = rec_service.get_skill_insights(skills)
+            
+            return Response({
+                "recommendations": recommendations,
+                "skill_insights": skill_insights,
+                "total_recommendations": len(recommendations)
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": "Failed to generate recommendations",
+                "details": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ResumeQualityView(APIView):
+    """
+    Analyze resume quality and provide predictions
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    
+    def post(self, request):
+        """
+        Analyze resume quality
+        """
+        try:
+            from .recommendation_service import get_recommendation_service
+            
+            # Get resume text from request
+            resume_text = request.data.get('resume_text', '')
+            
+            if not resume_text:
+                return Response({
+                    "error": "Resume text is required"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Get recommendation service
+            rec_service = get_recommendation_service()
+            
+            # Analyze resume quality
+            quality_analysis = rec_service.analyze_resume_quality(resume_text)
+            
+            return Response({
+                "analysis": quality_analysis
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": "Failed to analyze resume quality",
+                "details": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

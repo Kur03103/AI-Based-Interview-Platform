@@ -7,3 +7,7 @@ python-dotenv
 requests
 gTTS
 Pillow
+numpy>=1.26.0
+scikit-learn>=1.7.0
+pandas>=2.0.0
+scipy>=1.11.0

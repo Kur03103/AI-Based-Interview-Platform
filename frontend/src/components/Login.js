@@ -1,18 +1,18 @@
-import React, { useState, forwardRef } from 'react';
+import React, { useState, forwardRef } from "react";
 
 const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     try {
       await onLogin(username, password);
     } catch (err) {
-      // Error handling is done in parent or here? 
+      // Error handling is done in parent or here?
       // If onLogin throws, we catch it.
       // But onLogin from useAuth (via parent) likely throws.
       console.error("Login error", err);
@@ -24,7 +24,7 @@ const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
       } else if (err.message) {
         setError(err.message);
       } else {
-        setError('Invalid username or password.');
+        setError("Invalid username or password.");
       }
     }
   };
@@ -32,7 +32,10 @@ const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
   return (
     <form ref={ref} onSubmit={handleLogin} className="space-y-5">
       <div>
-        <label htmlFor="login-username" className="block text-sm font-medium text-gray-700 mb-2">
+        <label
+          htmlFor="login-username"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           Username
         </label>
         <input
@@ -41,12 +44,15 @@ const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Enter your username"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 hover:border-gray-400"
+          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition duration-200 hover:border-gray-400 dark:hover:border-gray-500"
         />
       </div>
 
       <div>
-        <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-2">
+        <label
+          htmlFor="login-password"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           Password
         </label>
         <input
@@ -55,11 +61,15 @@ const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Enter your password"
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200 hover:border-gray-400"
+          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition duration-200 hover:border-gray-400 dark:hover:border-gray-500"
         />
       </div>
 
-      {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</p>}
+      {error && (
+        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+          {error}
+        </p>
+      )}
 
       <button
         type="submit"
@@ -72,14 +82,14 @@ const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
         <button
           type="button"
           onClick={(e) => e.preventDefault()}
-          className="text-indigo-600 hover:underline"
+          className="text-indigo-600 dark:text-indigo-400 hover:underline"
         >
           Forgot password?
         </button>
         <button
           type="button"
           onClick={onSwitchToSignup}
-          className="text-indigo-600 hover:underline font-medium"
+          className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
         >
           Create account
         </button>
@@ -88,5 +98,5 @@ const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
   );
 });
 
-Login.displayName = 'Login';
+Login.displayName = "Login";
 export default Login;

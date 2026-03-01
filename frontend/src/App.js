@@ -6,6 +6,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
@@ -15,25 +16,27 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/landing" element={<Landing />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/landing" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-          {/* Protected Routes */}
-          {/* <Route element={<ProtectedRoute />}> */}
-          <Route path="/home" element={<Dashboard />} />
-          <Route path="/interview" element={<Interview />} />
-          {/* </Route> */}
+            {/* Protected Routes */}
+            {/* <Route element={<ProtectedRoute />}> */}
+            <Route path="/home" element={<Dashboard />} />
+            <Route path="/interview" element={<Interview />} />
+            {/* </Route> */}
 
-          {/* Fallback route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+            {/* Fallback route */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

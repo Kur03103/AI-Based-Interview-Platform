@@ -177,7 +177,7 @@ export default function Sidebar({
     { id: "dashboard", label: "Dashboard" },
     { id: "interview", label: "Start Interview" },
     { id: "resume", label: "Upload Resume" },
-    { id: "proposal", label: "Analytics" },
+    { id: "recommendations", label: "Recommendations" },
     { id: "about", label: "About" },
   ];
 

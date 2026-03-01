@@ -81,7 +81,7 @@ export default function ResumeUpload() {
 
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/cv/analyze/",
+        "http://127.0.0.1:8000/api/candidates/analyze/",
         formData,
         {
           headers: {
@@ -464,55 +464,48 @@ export default function ResumeUpload() {
               </motion.div>
             </div>
 
-            {/* Analytics */}
+            {/* Job Recommendations */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-100/80 p-6"
+              className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl shadow-xl border border-indigo-200/50 p-8"
             >
-              <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-6 h-6 text-blue-600"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"
-                  />
-                </svg>
-                Analytics
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 border border-blue-200/50">
-                  <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">
-                    Keyword Density
-                  </p>
-                  <p className="text-sm text-gray-700">
-                    {analysis.analytics.keyword_density}
-                  </p>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-7 h-7 text-white"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
+                    />
+                  </svg>
                 </div>
-                <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-xl p-4 border border-purple-200/50">
-                  <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-2">
-                    Experience Depth
-                  </p>
-                  <p className="text-sm text-gray-700">
-                    {analysis.analytics.experience_depth}
-                  </p>
-                </div>
-                <div className="bg-gradient-to-br from-pink-50 to-pink-100/50 rounded-xl p-4 border border-pink-200/50">
-                  <p className="text-xs font-semibold text-pink-600 uppercase tracking-wider mb-2">
-                    Skills Balance
-                  </p>
-                  <p className="text-sm text-gray-700">
-                    {analysis.analytics.skills_balance}
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-1">
+                    Get Job Recommendations
+                  </h3>
+                  <p className="text-gray-600">
+                    Based on your skills, get personalized job matches
                   </p>
                 </div>
               </div>
+              <p className="text-gray-700 mb-6">
+                Visit the Recommendations section to discover job opportunities
+                that match your profile and get insights on your resume quality.
+              </p>
+              <button
+                onClick={() => (window.location.href = "#recommendations")}
+                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              >
+                View Recommendations →
+              </button>
             </motion.div>
 
             {/* Strengths and Weaknesses */}

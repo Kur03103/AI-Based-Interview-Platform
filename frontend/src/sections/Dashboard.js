@@ -259,13 +259,13 @@ export default function Dashboard({ userName, setActiveSection }) {
     },
     {
       id: 3,
-      title: "Analytics",
+      title: "Recommendations",
       description:
-        "Track your progress with detailed metrics. See where you excel and improve.",
+        "Get AI-powered job recommendations and resume quality predictions instantly.",
       icon: <BulbIcon />,
       color: "from-emerald-400 to-teal-500",
-      buttonText: "View Stats",
-      onClick: () => setActiveSection("proposal"),
+      buttonText: "Get Jobs",
+      onClick: () => setActiveSection("recommendations"),
     },
   ];
 
