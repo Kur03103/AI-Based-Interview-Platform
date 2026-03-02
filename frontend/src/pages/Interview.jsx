@@ -25,6 +25,8 @@ const Interview = () => {
   const [timeRemaining, setTimeRemaining] = useState(0); // seconds remaining
   const [showFinalResults, setShowFinalResults] = useState(false);
   const [interviewCompleted, setInterviewCompleted] = useState(false);
+  const [analysisData, setAnalysisData] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Refs
   const recognitionRef = useRef(null);
@@ -323,6 +325,7 @@ const Interview = () => {
     setInterviewCompleted(true);
     stopInterview();
     setShowFinalResults(true);
+    fetchAnalysis(conversation);
   };
 
   const stopInterview = () => {
@@ -364,6 +367,224 @@ const Interview = () => {
     setInterviewCompleted(true);
     stopInterview();
     setShowFinalResults(true);
+    fetchAnalysis(conversation);
+  };
+
+  // ── Emotion / Tone Analysis ──────────────────────────────────────────────
+  const fetchAnalysis = async (conv) => {
+    if (!conv || conv.length === 0) return;
+    setIsAnalyzing(true);
+    setAnalysisData(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/interview/analyze/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          conversation: conv,
+          interview_type: selectedInterviewType,
+          duration: selectedDuration,
+        }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setAnalysisData(data);
+    } catch (err) {
+      console.error("[Interview] Analysis fetch error:", err);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // ── Report Download ───────────────────────────────────────────────────────
+  const downloadReport = () => {
+    const d = analysisData;
+    const date = new Date().toLocaleString();
+    const type =
+      selectedInterviewType === "technical" ? "Technical" : "Behavioral";
+    const skillKey =
+      selectedInterviewType === "technical"
+        ? "technical_depth"
+        : "empathy_and_self_awareness";
+    const skillLabel =
+      selectedInterviewType === "technical"
+        ? "Technical Depth"
+        : "Empathy & Self-Awareness";
+
+    const scoreBar = (val) =>
+      `<div style="background:#1e293b;border-radius:4px;height:10px;width:100%;margin-top:4px;">
+        <div style="background:linear-gradient(90deg,#6366f1,#8b5cf6);height:100%;border-radius:4px;width:${val}%;"></div>
+      </div>`;
+
+    const toneColor = (tone) => {
+      const map = {
+        confident: "#22c55e",
+        nervous: "#f97316",
+        enthusiastic: "#a78bfa",
+        hesitant: "#fb923c",
+        calm: "#60a5fa",
+        anxious: "#f87171",
+        assertive: "#34d399",
+        uncertain: "#facc15",
+      };
+      return map[tone] || "#94a3b8";
+    };
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Interview Report – ${type}</title>
+<style>
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#e2e8f0;margin:0;padding:32px;}
+  .container{max-width:860px;margin:0 auto;background:#1e293b;border-radius:16px;padding:40px;box-shadow:0 25px 50px rgba(0,0,0,0.5);}
+  h1{font-size:28px;font-weight:800;background:linear-gradient(90deg,#818cf8,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0 0 4px;}
+  .meta{color:#94a3b8;font-size:13px;margin-bottom:32px;}
+  .section{background:#0f172a;border-radius:12px;padding:24px;margin-bottom:20px;border:1px solid #334155;}
+  h2{font-size:16px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:.05em;margin:0 0 16px;}
+  .score-big{font-size:56px;font-weight:900;background:linear-gradient(135deg,#818cf8,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;}
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+  .stat-box{background:#1e293b;border-radius:10px;padding:16px;text-align:center;border:1px solid #334155;}
+  .stat-val{font-size:28px;font-weight:800;color:#818cf8;}
+  .stat-lbl{font-size:11px;color:#94a3b8;margin-top:4px;}
+  .skill-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .skill-name{font-size:14px;color:#cbd5e1;}
+  .skill-pct{font-size:13px;font-weight:700;color:#818cf8;}
+  .tone-badge{display:inline-block;padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;text-transform:capitalize;}
+  .tag{display:inline-block;background:#1e3a5f;color:#93c5fd;font-size:11px;padding:3px 10px;border-radius:99px;margin:3px 3px 0 0;}
+  .bullet{display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;font-size:14px;color:#cbd5e1;}
+  .dot-green{width:8px;height:8px;border-radius:50%;background:#22c55e;flex-shrink:0;margin-top:5px;}
+  .dot-yellow{width:8px;height:8px;border-radius:50%;background:#facc15;flex-shrink:0;margin-top:5px;}
+  .transcript-line{padding:10px 0;border-bottom:1px solid #1e293b;font-size:13px;}
+  .label-you{color:#4ade80;font-weight:700;font-size:11px;}
+  .label-ai{color:#60a5fa;font-weight:700;font-size:11px;}
+  .content-text{color:#94a3b8;margin-top:4px;line-height:1.6;}
+  @media print{body{background:#fff;color:#000;padding:0;} .container{box-shadow:none;}}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Interview Report</h1>
+  <div class="meta">
+    ${type} Interview &nbsp;|&nbsp; ${d.duration} minutes &nbsp;|&nbsp; Generated: ${date}<br/>
+    Session: ${sessionId}
+  </div>
+
+  <!-- Scores -->
+  <div class="section">
+    <h2>Overall Performance</h2>
+    <div style="display:flex;align-items:center;gap:32px;">
+      <div>
+        <div class="score-big">${d.overall_score}</div>
+        <div style="font-size:13px;color:#94a3b8;margin-top:4px;">Overall Score / 100</div>
+      </div>
+      <div style="flex:1;">
+        ${scoreBar(d.overall_score)}
+      </div>
+    </div>
+    <div class="stat-grid" style="margin-top:20px;">
+      <div class="stat-box"><div class="stat-val">${d.duration}m</div><div class="stat-lbl">Duration</div></div>
+      <div class="stat-box"><div class="stat-val">${d.question_count}</div><div class="stat-lbl">Questions</div></div>
+      <div class="stat-box"><div class="stat-val">${d.response_count}</div><div class="stat-lbl">Responses</div></div>
+    </div>
+  </div>
+
+  <!-- Tone Analysis -->
+  <div class="section">
+    <h2>Emotion & Tone Analysis</h2>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;">
+      <div>
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">Dominant Tone</div>
+        <span class="tone-badge" style="background:${toneColor(d.tone_analysis?.dominant_tone)}22;color:${toneColor(d.tone_analysis?.dominant_tone)};border:1px solid ${toneColor(d.tone_analysis?.dominant_tone)}55;">
+          ${d.tone_analysis?.dominant_tone || "calm"}
+        </span>
+      </div>
+      <div>
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">Confidence Score</div>
+        <div style="font-size:24px;font-weight:800;color:#818cf8;">${d.tone_analysis?.confidence_score || 0}<span style="font-size:14px;">/100</span></div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">Overall Sentiment</div>
+        <div style="font-size:14px;font-weight:700;color:${d.tone_analysis?.sentiment === "positive" ? "#22c55e" : d.tone_analysis?.sentiment === "negative" ? "#f87171" : "#94a3b8"};text-transform:capitalize;">${d.tone_analysis?.sentiment || "neutral"}</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;">
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">Detected Tone Tags</div>
+      ${(d.tone_analysis?.tone_tags || []).map((t) => `<span class="tag">${t}</span>`).join("")}
+    </div>
+  </div>
+
+  <!-- Skill Scores -->
+  <div class="section">
+    <h2>Skill Breakdown</h2>
+    ${[
+      ["Communication", d.skill_scores?.communication],
+      ["Response Quality", d.skill_scores?.response_quality],
+      ["Engagement", d.skill_scores?.engagement],
+      [skillLabel, d.skill_scores?.[skillKey]],
+    ]
+      .map(
+        ([label, val]) => `
+      <div class="skill-row">
+        <span class="skill-name">${label}</span>
+        <span class="skill-pct">${val || 0}%</span>
+      </div>
+      ${scoreBar(val || 0)}
+      <div style="margin-bottom:12px;"></div>
+    `,
+      )
+      .join("")}
+  </div>
+
+  <!-- Strengths / Improvements -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+    <div class="section" style="margin-bottom:0;">
+      <h2>Strengths</h2>
+      ${(d.strengths || []).map((s) => `<div class="bullet"><div class="dot-green"></div><div>${s}</div></div>`).join("")}
+    </div>
+    <div class="section" style="margin-bottom:0;">
+      <h2>Areas to Improve</h2>
+      ${(d.improvements || []).map((s) => `<div class="bullet"><div class="dot-yellow"></div><div>${s}</div></div>`).join("")}
+    </div>
+  </div>
+
+  <!-- Detailed Feedback -->
+  <div class="section">
+    <h2>Detailed Feedback</h2>
+    <p style="font-size:14px;color:#cbd5e1;line-height:1.7;margin:0;">${d.detailed_feedback || ""}</p>
+  </div>
+
+  <!-- Full Transcript -->
+  <div class="section">
+    <h2>Full Transcript</h2>
+    ${conversation
+      .map(
+        (msg) => `
+      <div class="transcript-line">
+        <div class="${msg.role === "user" ? "label-you" : "label-ai"}">${msg.role === "user" ? "You" : "Interviewer"}</div>
+        <div class="content-text">${msg.content}</div>
+      </div>
+    `,
+      )
+      .join("")}
+  </div>
+
+  <div style="text-align:center;margin-top:24px;color:#475569;font-size:12px;">
+    Generated by Interview Bloom AI &nbsp;•&nbsp; ${date}
+  </div>
+</div>
+</body></html>`;
+
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `interview-report-${sessionId}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const startRecognitionIfReady = () => {
@@ -1486,11 +1707,11 @@ const Interview = () => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ type: "spring", damping: 25 }}
-              className="bg-gray-900/95 backdrop-blur-2xl rounded-3xl p-8 max-w-3xl w-full border border-white/20 shadow-2xl max-h-[90vh] overflow-y-auto"
+              className="bg-gray-900/95 backdrop-blur-2xl rounded-3xl p-8 max-w-3xl w-full border border-white/20 shadow-2xl max-h-[92vh] overflow-y-auto"
             >
-              {/* Header */}
-              <div className="text-center mb-8">
-                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
+              {/* ── Header ─────────────────────────────────────── */}
+              <div className="text-center mb-6">
+                <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30">
                   <svg
                     className="w-10 h-10 text-white"
                     fill="none"
@@ -1505,136 +1726,322 @@ const Interview = () => {
                     />
                   </svg>
                 </div>
-                <h2 className="text-3xl font-bold mb-2 text-white">
+                <h2 className="text-3xl font-bold mb-1 text-white">
                   Interview Completed
                 </h2>
-                <p className="text-gray-400">
+                <p className="text-gray-400 text-sm">
                   {selectedInterviewType === "technical"
                     ? "Technical"
                     : "Behavioral"}{" "}
-                  Interview Summary
+                  Interview · {selectedDuration} min
                 </p>
               </div>
 
-              {/* Interview Stats */}
-              <div className="grid grid-cols-3 gap-4 mb-8">
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                  <div className="text-2xl font-bold text-indigo-400 mb-1">
-                    {selectedDuration}
+              {/* ── Stats Row ───────────────────────────────────── */}
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                {[
+                  {
+                    value: selectedDuration,
+                    label: "Minutes",
+                    color: "text-indigo-400",
+                  },
+                  {
+                    value: conversation.filter((m) => m.role === "user").length,
+                    label: "Responses",
+                    color: "text-purple-400",
+                  },
+                  {
+                    value: conversation.filter((m) => m.role === "ai").length,
+                    label: "Questions",
+                    color: "text-pink-400",
+                  },
+                ].map((s) => (
+                  <div
+                    key={s.label}
+                    className="bg-white/5 rounded-xl p-4 border border-white/10 text-center"
+                  >
+                    <div className={`text-2xl font-bold ${s.color} mb-1`}>
+                      {s.value}
+                    </div>
+                    <div className="text-xs text-gray-400">{s.label}</div>
                   </div>
-                  <div className="text-xs text-gray-400">Minutes</div>
-                </div>
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                  <div className="text-2xl font-bold text-purple-400 mb-1">
-                    {conversation.filter((msg) => msg.role === "user").length}
-                  </div>
-                  <div className="text-xs text-gray-400">Responses</div>
-                </div>
-                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
-                  <div className="text-2xl font-bold text-pink-400 mb-1">
-                    {conversation.filter((msg) => msg.role === "ai").length}
-                  </div>
-                  <div className="text-xs text-gray-400">Questions</div>
-                </div>
+                ))}
               </div>
 
-              {/* Performance Summary */}
-              <div className="bg-white/5 rounded-xl p-6 border border-white/10 mb-6">
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  Performance Summary
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Communication</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
-                          style={{ width: "85%" }}
-                        ></div>
-                      </div>
-                      <span className="text-sm text-indigo-400 font-semibold w-12">
-                        Good
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Response Quality</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
-                          style={{ width: "78%" }}
-                        ></div>
-                      </div>
-                      <span className="text-sm text-indigo-400 font-semibold w-12">
-                        Good
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-300">Engagement</span>
-                    <div className="flex items-center gap-2">
-                      <div className="w-32 h-2 bg-gray-700 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500"
-                          style={{ width: "90%" }}
-                        ></div>
-                      </div>
-                      <span className="text-sm text-green-400 font-semibold w-12">
-                        Great
-                      </span>
-                    </div>
-                  </div>
+              {/* ── Analysis Loading / Results ───────────────────── */}
+              {isAnalyzing ? (
+                <div className="bg-white/5 rounded-2xl p-10 border border-white/10 mb-6 flex flex-col items-center gap-4">
+                  <div className="w-12 h-12 rounded-full border-4 border-indigo-500/40 border-t-indigo-500 animate-spin" />
+                  <p className="text-gray-300 text-sm font-medium">
+                    Analyzing your interview with AI…
+                  </p>
+                  <p className="text-gray-500 text-xs">
+                    Detecting tone, scoring responses, generating feedback
+                  </p>
                 </div>
-              </div>
+              ) : analysisData ? (
+                <>
+                  {/* ── Overall Score ─────────────────────────────── */}
+                  <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 rounded-2xl p-6 border border-indigo-500/20 mb-6 flex items-center gap-6">
+                    <div className="text-center">
+                      <div className="text-5xl font-black text-white">
+                        {analysisData.overall_score}
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1">/ 100</div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-semibold text-gray-200">
+                          Overall Score
+                        </span>
+                        <span
+                          className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                            analysisData.overall_score >= 80
+                              ? "bg-green-500/20 text-green-400"
+                              : analysisData.overall_score >= 60
+                                ? "bg-yellow-500/20 text-yellow-400"
+                                : "bg-red-500/20 text-red-400"
+                          }`}
+                        >
+                          {analysisData.overall_score >= 80
+                            ? "Excellent"
+                            : analysisData.overall_score >= 60
+                              ? "Good"
+                              : "Needs Work"}
+                        </span>
+                      </div>
+                      <div className="h-3 bg-gray-700 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${analysisData.overall_score}%` }}
+                          transition={{ duration: 1.2, ease: "easeOut" }}
+                          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-              {/* Key Insights */}
-              <div className="bg-white/5 rounded-xl p-6 border border-white/10 mb-6">
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  Key Insights
-                </h3>
-                <ul className="space-y-2 text-sm text-gray-300">
-                  <li className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 mt-1.5 flex-shrink-0"></span>
-                    <span>
-                      Strong technical communication and clarity in responses
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 mt-1.5 flex-shrink-0"></span>
-                    <span>
-                      Good engagement throughout the interview session
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 mt-1.5 flex-shrink-0"></span>
-                    <span>
-                      Consider providing more detailed examples in future
-                      interviews
-                    </span>
-                  </li>
-                </ul>
-              </div>
+                  {/* ── Tone & Emotion Analysis ──────────────────── */}
+                  <div className="bg-white/5 rounded-2xl p-6 border border-white/10 mb-6">
+                    <h3 className="text-sm font-bold text-indigo-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                        />
+                      </svg>
+                      Tone &amp; Emotion Analysis
+                    </h3>
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="bg-black/20 rounded-xl p-4 text-center">
+                        <div className="text-xs text-gray-500 mb-2">
+                          Dominant Tone
+                        </div>
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-bold capitalize ${
+                            {
+                              confident: "bg-green-500/20 text-green-400",
+                              nervous: "bg-orange-500/20 text-orange-400",
+                              enthusiastic: "bg-violet-500/20 text-violet-400",
+                              hesitant: "bg-orange-400/20 text-orange-300",
+                              calm: "bg-blue-500/20 text-blue-400",
+                              assertive: "bg-emerald-500/20 text-emerald-400",
+                            }[analysisData.tone_analysis?.dominant_tone] ||
+                            "bg-gray-700 text-gray-300"
+                          }`}
+                        >
+                          {analysisData.tone_analysis?.dominant_tone || "calm"}
+                        </span>
+                      </div>
+                      <div className="bg-black/20 rounded-xl p-4 text-center">
+                        <div className="text-xs text-gray-500 mb-2">
+                          Confidence
+                        </div>
+                        <div className="text-2xl font-black text-indigo-400">
+                          {analysisData.tone_analysis?.confidence_score}
+                          <span className="text-sm text-gray-500">/100</span>
+                        </div>
+                      </div>
+                      <div className="bg-black/20 rounded-xl p-4 text-center">
+                        <div className="text-xs text-gray-500 mb-2">
+                          Sentiment
+                        </div>
+                        <div
+                          className={`text-sm font-bold capitalize ${
+                            analysisData.tone_analysis?.sentiment === "positive"
+                              ? "text-green-400"
+                              : analysisData.tone_analysis?.sentiment ===
+                                  "negative"
+                                ? "text-red-400"
+                                : "text-gray-300"
+                          }`}
+                        >
+                          {analysisData.tone_analysis?.sentiment || "neutral"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {(analysisData.tone_analysis?.tone_tags || []).map(
+                        (tag) => (
+                          <span
+                            key={tag}
+                            className="px-3 py-1 rounded-full bg-indigo-900/40 border border-indigo-500/30 text-indigo-300 text-xs font-medium"
+                          >
+                            {tag}
+                          </span>
+                        ),
+                      )}
+                    </div>
+                  </div>
 
-              {/* Full Transcript */}
-              <div className="bg-white/5 rounded-xl p-6 border border-white/10 mb-6 max-h-60 overflow-y-auto">
-                <h3 className="text-lg font-semibold text-white mb-4">
-                  Full Transcript
-                </h3>
-                <div className="space-y-3 text-sm">
+                  {/* ── Skill Scores ─────────────────────────────── */}
+                  <div className="bg-white/5 rounded-2xl p-6 border border-white/10 mb-6">
+                    <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider mb-4">
+                      Skill Breakdown
+                    </h3>
+                    <div className="space-y-4">
+                      {[
+                        [
+                          "Communication",
+                          analysisData.skill_scores?.communication,
+                        ],
+                        [
+                          "Response Quality",
+                          analysisData.skill_scores?.response_quality,
+                        ],
+                        ["Engagement", analysisData.skill_scores?.engagement],
+                        selectedInterviewType === "technical"
+                          ? [
+                              "Technical Depth",
+                              analysisData.skill_scores?.technical_depth,
+                            ]
+                          : [
+                              "Empathy & Self-Awareness",
+                              analysisData.skill_scores
+                                ?.empathy_and_self_awareness,
+                            ],
+                      ].map(([label, val]) => (
+                        <div key={label}>
+                          <div className="flex justify-between items-center mb-1.5">
+                            <span className="text-sm text-gray-300">
+                              {label}
+                            </span>
+                            <span
+                              className={`text-xs font-bold ${
+                                val >= 80
+                                  ? "text-green-400"
+                                  : val >= 60
+                                    ? "text-yellow-400"
+                                    : "text-red-400"
+                              }`}
+                            >
+                              {val ?? 0}%
+                            </span>
+                          </div>
+                          <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${val ?? 0}%` }}
+                              transition={{
+                                duration: 1,
+                                ease: "easeOut",
+                                delay: 0.2,
+                              }}
+                              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ── Strengths + Improvements (side by side) ───── */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="bg-white/5 rounded-2xl p-5 border border-green-500/20">
+                      <h3 className="text-sm font-bold text-green-400 uppercase tracking-wider mb-3">
+                        ✓ Strengths
+                      </h3>
+                      <ul className="space-y-2">
+                        {(analysisData.strengths || []).map((s, i) => (
+                          <li
+                            key={i}
+                            className="flex items-start gap-2 text-sm text-gray-300"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0 mt-1.5" />
+                            {s}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="bg-white/5 rounded-2xl p-5 border border-yellow-500/20">
+                      <h3 className="text-sm font-bold text-yellow-400 uppercase tracking-wider mb-3">
+                        △ Areas to Improve
+                      </h3>
+                      <ul className="space-y-2">
+                        {(analysisData.improvements || []).map((s, i) => (
+                          <li
+                            key={i}
+                            className="flex items-start gap-2 text-sm text-gray-300"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 flex-shrink-0 mt-1.5" />
+                            {s}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* ── Personalized Feedback ────────────────────── */}
+                  <div className="bg-gradient-to-br from-indigo-900/20 to-purple-900/20 rounded-2xl p-5 border border-indigo-500/20 mb-6">
+                    <h3 className="text-sm font-bold text-indigo-300 uppercase tracking-wider mb-3">
+                      AI Feedback
+                    </h3>
+                    <p className="text-sm text-gray-300 leading-relaxed">
+                      {analysisData.detailed_feedback}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="bg-white/5 rounded-2xl p-6 border border-white/10 mb-6 text-center text-gray-500 text-sm">
+                  Analysis unavailable — no conversation data found.
+                </div>
+              )}
+
+              {/* ── Full Transcript (collapsible) ─────────────────── */}
+              <details className="mb-6 group">
+                <summary className="cursor-pointer bg-white/5 rounded-xl px-5 py-3 border border-white/10 text-sm font-semibold text-gray-300 flex items-center justify-between list-none">
+                  <span>Full Transcript ({conversation.length} messages)</span>
+                  <svg
+                    className="w-4 h-4 transition-transform group-open:rotate-180"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </summary>
+                <div className="mt-2 bg-white/5 rounded-xl p-5 border border-white/10 max-h-72 overflow-y-auto space-y-3 text-sm">
                   {conversation.map((msg, idx) => (
                     <div
                       key={idx}
                       className="pb-2 border-b border-gray-700/30 last:border-0"
                     >
                       <div
-                        className="font-semibold mb-1 text-xs"
-                        style={{
-                          color: msg.role === "user" ? "#4ade80" : "#60a5fa",
-                        }}
+                        className={`font-semibold text-xs mb-1 ${msg.role === "user" ? "text-green-400" : "text-blue-400"}`}
                       >
-                        {msg.role === "user" ? "You" : "Interviewer"}:
+                        {msg.role === "user" ? "You" : "Interviewer"}
                       </div>
                       <div className="text-gray-300 leading-relaxed">
                         {msg.content}
@@ -1642,10 +2049,10 @@ const Interview = () => {
                     </div>
                   ))}
                 </div>
-              </div>
+              </details>
 
-              {/* Action Buttons */}
-              <div className="flex gap-4">
+              {/* ── Action Buttons ──────────────────────────────── */}
+              <div className="flex flex-wrap gap-3">
                 <button
                   onClick={() => {
                     setShowFinalResults(false);
@@ -1653,16 +2060,41 @@ const Interview = () => {
                     setConversation([]);
                     setSelectedInterviewType(null);
                     setSelectedDuration(null);
+                    setAnalysisData(null);
                   }}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-semibold text-white shadow-lg hover:shadow-indigo-500/50 transition-all duration-300"
+                  className="flex-1 px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 rounded-xl font-semibold text-white shadow-lg hover:shadow-indigo-500/40 transition-all duration-300 text-sm"
                 >
-                  Start New Interview
+                  New Interview
+                </button>
+                <button
+                  disabled={!analysisData || isAnalyzing}
+                  onClick={downloadReport}
+                  className={`flex-1 px-5 py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 ${
+                    analysisData && !isAnalyzing
+                      ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg hover:shadow-emerald-500/40"
+                      : "bg-gray-700 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                    />
+                  </svg>
+                  Download Report
                 </button>
                 <button
                   onClick={() => navigate("/home")}
-                  className="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-medium text-white border border-white/20 transition-all duration-300"
+                  className="flex-1 px-5 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-medium text-white border border-white/20 transition-all duration-300 text-sm"
                 >
-                  Back to Dashboard
+                  Dashboard
                 </button>
               </div>
             </motion.div>
