@@ -1,10 +1,11 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   motion,
   useMotionValue,
   useTransform,
   useSpring,
   useInView,
+  AnimatePresence,
 } from "framer-motion";
 
 /* ─────────────────────────────────────────────────────────────
@@ -299,11 +300,141 @@ function TipCard({ number, tip, category, gradient, index }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   SPLIT TEXT — letter-by-letter animated reveal
+───────────────────────────────────────────────────────────── */
+function SplitText({ text, className = "", delay = 0, once = true }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once });
+  const chars = Array.from(text);
+  return (
+    <span ref={ref} className={`inline-block ${className}`} aria-label={text}>
+      {chars.map((char, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: 36, rotateX: -40 }} 
+          animate={isInView ? { opacity: 1, y: 0, rotateX: 0 } : {}}
+          transition={{
+            duration: 0.45,
+            delay: delay + i * 0.04,
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          className="inline-block"
+          style={{ transformOrigin: "bottom center" }}
+        >
+          {char === " " ? "\u00A0" : char}
+        </motion.span>
+      ))}
+    </span>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   FLOATING SPARKLE PARTICLE
+───────────────────────────────────────────────────────────── */
+function Particle({ x, y, size, color, delay, duration }) {
+  return (
+    <motion.div
+      className={`absolute rounded-full pointer-events-none ${color}`}
+      style={{ left: x, top: y, width: size, height: size }}
+      animate={{
+        y: [0, -20, 0, 12, 0],
+        x: [0, 10, -8, 4, 0],
+        opacity: [0, 0.85, 0.6, 0.85, 0],
+        scale: [0.6, 1, 0.85, 1.1, 0.6],
+      }}
+      transition={{
+        duration,
+        delay,
+        repeat: Infinity,
+        ease: "easeInOut",
+      }}
+    />
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
    MAIN DASHBOARD
 ───────────────────────────────────────────────────────────── */
 export default function Dashboard({ userName, setActiveSection }) {
   const heroRef = useRef(null);
   const isHeroInView = useInView(heroRef, { once: true });
+  const [showCursor, setShowCursor] = useState(true);
+
+  // hide blinking cursor after the name finishes revealing
+  useEffect(() => {
+    if (!isHeroInView) return;
+    const chars = Array.from(userName || "");
+    const totalDelay = (0.6 + chars.length * 0.04 + 0.8) * 1000;
+    const t = setTimeout(() => setShowCursor(false), totalDelay);
+    return () => clearTimeout(t);
+  }, [isHeroInView, userName]);
+
+  const particles = [
+    {
+      x: "8%",
+      y: "18%",
+      size: 8,
+      color: "bg-indigo-400/70",
+      delay: 0,
+      duration: 4.2,
+    },
+    {
+      x: "88%",
+      y: "12%",
+      size: 6,
+      color: "bg-purple-400/70",
+      delay: 0.7,
+      duration: 3.8,
+    },
+    {
+      x: "5%",
+      y: "70%",
+      size: 5,
+      color: "bg-pink-400/70",
+      delay: 1.2,
+      duration: 5.1,
+    },
+    {
+      x: "92%",
+      y: "65%",
+      size: 7,
+      color: "bg-blue-400/70",
+      delay: 0.4,
+      duration: 4.6,
+    },
+    {
+      x: "50%",
+      y: "5%",
+      size: 5,
+      color: "bg-fuchsia-400/70",
+      delay: 1.8,
+      duration: 3.6,
+    },
+    {
+      x: "20%",
+      y: "88%",
+      size: 6,
+      color: "bg-cyan-400/70",
+      delay: 0.9,
+      duration: 4.9,
+    },
+    {
+      x: "75%",
+      y: "82%",
+      size: 4,
+      color: "bg-indigo-300/70",
+      delay: 2.1,
+      duration: 3.3,
+    },
+    {
+      x: "35%",
+      y: "2%",
+      size: 4,
+      color: "bg-violet-400/70",
+      delay: 1.5,
+      duration: 4.4,
+    },
+  ];
 
   const actions = [
     {
@@ -676,31 +807,73 @@ export default function Dashboard({ userName, setActiveSection }) {
           </span>
         </motion.div>
 
-        <motion.h1
-          custom={1}
-          variants={fadeUp}
-          initial="hidden"
-          animate={isHeroInView ? "visible" : "hidden"}
-          className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.08] tracking-tight mb-6"
-        >
-          <span className="text-gray-900 dark:text-white">Welcome back,</span>
-          <br />
-          <span className="relative inline-block">
-            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
-              {userName}
-            </span>
-            <motion.div
-              animate={{ scaleX: [0, 1, 1, 0] }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                repeatDelay: 1.5,
-                ease: "easeInOut",
-              }}
-              className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 origin-left rounded-full"
+        <div className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight mb-6">
+          {/* "Welcome back," — staggered per-character drop-in */}
+          <div className="overflow-hidden pb-1">
+            <SplitText
+              text="Welcome back,"
+              delay={0.2}
+              className="text-gray-900 dark:text-white"
             />
-          </span>
-        </motion.h1>
+          </div>
+
+          {/* Username — staggered + shimmer sweep + blinking cursor */}
+          <div className="relative inline-flex items-baseline gap-1 overflow-visible mt-1">
+            {/* aurora glow behind the name */}
+            <motion.div
+              animate={{
+                opacity: [0.35, 0.65, 0.35],
+                scaleX: [0.9, 1.05, 0.9],
+              }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute inset-0 bg-gradient-to-r from-indigo-400/30 via-purple-400/30 to-pink-400/30 blur-2xl rounded-full -z-10"
+            />
+
+            <span className="relative">
+              {/* shimmer sweep overlay */}
+              <motion.span
+                initial={{ x: "-110%" }}
+                animate={isHeroInView ? { x: "110%" } : { x: "-110%" }}
+                transition={{
+                  duration: 0.9,
+                  delay: 0.6 + Array.from(userName || "").length * 0.04,
+                  ease: "easeInOut",
+                }}
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 dark:via-white/20 to-transparent skew-x-[-20deg] pointer-events-none z-10"
+              />
+              <SplitText
+                text={userName}
+                delay={0.5}
+                className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent"
+              />
+            </span>
+
+            {/* blinking cursor */}
+            <AnimatePresence>
+              {showCursor && isHeroInView && (
+                <motion.span
+                  initial={{ opacity: 1 }}
+                  animate={{ opacity: [1, 0, 1] }}
+                  exit={{ opacity: 0, transition: { duration: 0.3 } }}
+                  transition={{ duration: 0.8, repeat: Infinity }}
+                  className="inline-block w-[3px] h-[0.85em] bg-indigo-500 rounded-full ml-1 mb-1 self-end"
+                />
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* decorative underline */}
+          <motion.div
+            initial={{ scaleX: 0 }}
+            animate={isHeroInView ? { scaleX: 1 } : { scaleX: 0 }}
+            transition={{
+              duration: 0.7,
+              delay: 0.6 + Array.from(userName || "").length * 0.04 + 0.3,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+            className="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-400 rounded-full origin-left mt-1"
+          />
+        </div>
 
         <motion.p
           custom={2}
