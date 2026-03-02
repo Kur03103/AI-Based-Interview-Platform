@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
 import Interview from "./pages/Interview";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminPanel from "./pages/AdminPanel";
 
 function App() {
   return (
@@ -30,6 +31,9 @@ function App() {
             <Route path="/home" element={<Dashboard />} />
             <Route path="/interview" element={<Interview />} />
             {/* </Route> */}
+
+            {/* Admin */}
+            <Route path="/admin" element={<AdminPanel />} />
 
             {/* Fallback route */}
             <Route path="*" element={<Navigate to="/" replace />} />
