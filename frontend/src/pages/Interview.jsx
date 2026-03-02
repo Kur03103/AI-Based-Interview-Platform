@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import ThemeToggle from "../components/ThemeToggle";
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
 
@@ -847,7 +848,7 @@ const Interview = () => {
 
   // Render
   return (
-    <div className="flex flex-col h-screen w-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white font-sans overflow-hidden items-center justify-center relative">
+    <div className="flex flex-col h-screen w-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-black dark:via-gray-900 dark:to-black text-white font-sans overflow-hidden items-center justify-center relative transition-colors duration-300">
       {/* Animated Background Blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
@@ -891,42 +892,50 @@ const Interview = () => {
         />
       </div>
 
-      <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center bg-gray-900/50 backdrop-blur-md z-10 border-b border-white/10">
-        <div className="flex items-center space-x-2">
-          <div
-            className={`w-2 h-2 rounded-full ${isInterviewActive ? "bg-green-400 animate-pulse" : "bg-red-500 animate-pulse"}`}
-          ></div>
-          <span className="text-sm font-medium tracking-wide text-gray-300">
-            {selectedInterviewType === "technical" ? "Technical" : "Behavioral"}{" "}
-            Interview Session
-          </span>
-        </div>
-
-        {/* Countdown Timer */}
-        {isInterviewActive && timeRemaining > 0 && (
-          <div className="flex items-center space-x-2 bg-indigo-500/20 px-4 py-2 rounded-lg border border-indigo-500/30">
-            <svg
-              className="w-4 h-4 text-indigo-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span
-              className={`text-base font-mono font-bold ${timeRemaining <= 60 ? "text-red-400" : "text-indigo-300"}`}
-            >
-              {formatTime(timeRemaining)}
+      <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center bg-gray-900/50 dark:bg-black/50 backdrop-blur-md z-10 border-b border-white/10 dark:border-white/5 transition-colors duration-300">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <div
+              className={`w-2 h-2 rounded-full ${isInterviewActive ? "bg-green-400 animate-pulse" : "bg-red-500 animate-pulse"}`}
+            ></div>
+            <span className="text-sm font-medium tracking-wide text-gray-300">
+              {selectedInterviewType === "technical"
+                ? "Technical"
+                : "Behavioral"}{" "}
+              Interview Session
             </span>
           </div>
-        )}
+        </div>
 
-        <div className="text-xs text-gray-500">{sessionId}</div>
+        {/* Right side: Timer + ThemeToggle + Session ID */}
+        <div className="flex items-center space-x-3">
+          {/* Countdown Timer */}
+          {isInterviewActive && timeRemaining > 0 && (
+            <div className="flex items-center space-x-2 bg-indigo-500/20 px-4 py-2 rounded-lg border border-indigo-500/30">
+              <svg
+                className="w-4 h-4 text-indigo-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span
+                className={`text-base font-mono font-bold ${timeRemaining <= 60 ? "text-red-400" : "text-indigo-300"}`}
+              >
+                {formatTime(timeRemaining)}
+              </span>
+            </div>
+          )}
+
+          <ThemeToggle />
+          <div className="text-xs text-gray-500">{sessionId}</div>
+        </div>
       </div>
 
       {!isInterviewActive ? (

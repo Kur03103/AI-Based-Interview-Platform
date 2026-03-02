@@ -36,13 +36,13 @@ const Landing = () => {
               >
                 Login
               </Link>
-              <ThemeToggle />
               <Link
                 to="/register"
                 className="bg-indigo-600 dark:bg-indigo-500 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-indigo-700 dark:hover:bg-indigo-600 transition transform hover:scale-105 duration-200 shadow-md"
               >
                 Get Started
               </Link>
+              <ThemeToggle />
             </div>
           </div>
         </div>

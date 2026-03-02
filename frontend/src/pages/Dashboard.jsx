@@ -5,13 +5,14 @@ import StartInterview from "../sections/StartInterview";
 import Recommendations from "../sections/Recommendations";
 import About from "../sections/About";
 import ResumeUpload from "../components/ResumeUpload";
+import ThemeToggle from "../components/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
 // Animated Gradient Mesh Background Component
 const AnimatedBackground = () => {
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="fixed inset-0 -z-10 overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-950 dark:via-gray-900 dark:to-indigo-950 transition-colors duration-300">
       {/* Animated Gradient Blobs */}
       <motion.div
         animate={{
@@ -102,7 +103,7 @@ const GlassNavbar = ({
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
-          className={`relative bg-white/70 backdrop-blur-2xl rounded-2xl border border-white/60 shadow-xl transition-all duration-500 ${
+          className={`relative bg-white/70 dark:bg-gray-900/80 backdrop-blur-2xl rounded-2xl border border-white/60 dark:border-gray-700/60 shadow-xl transition-all duration-500 ${
             scrolled ? "shadow-2xl" : "shadow-lg"
           }`}
         >
@@ -123,7 +124,7 @@ const GlassNavbar = ({
                 />
               </div>
               <div>
-                <div className="text-xl font-bold tracking-tight text-gray-900">
+                <div className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
                   Interview
                   <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
                     Bloom
@@ -135,7 +136,7 @@ const GlassNavbar = ({
                     transition={{ duration: 2, repeat: Infinity }}
                     className="w-1.5 h-1.5 rounded-full bg-emerald-500"
                   />
-                  <span className="text-[10px] text-gray-500 font-medium">
+                  <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium">
                     AI Powered
                   </span>
                 </div>
@@ -153,7 +154,7 @@ const GlassNavbar = ({
                   className={`relative px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 ${
                     activeSection === item.id
                       ? "text-white"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-100/50"
+                      : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-gray-700/50"
                   }`}
                 >
                   {activeSection === item.id && (
@@ -192,15 +193,16 @@ const GlassNavbar = ({
             <div className="flex items-center gap-3">
               <motion.div
                 whileHover={{ scale: 1.05 }}
-                className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100/50"
+                className="flex items-center gap-3 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 border border-indigo-100/50 dark:border-indigo-700/50"
               >
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-md">
                   {userName?.charAt(0)?.toUpperCase() || "U"}
                 </div>
-                <span className="text-sm font-semibold text-gray-700 hidden sm:block">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-200 hidden sm:block">
                   {userName}
                 </span>
               </motion.div>
+              <ThemeToggle />
               <motion.button
                 whileHover={{ scale: 1.05, rotate: 90 }}
                 whileTap={{ scale: 0.95 }}
@@ -293,7 +295,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-x-hidden">
+    <div className="min-h-screen relative overflow-x-hidden dark:text-white transition-colors duration-300">
       <AnimatedBackground />
 
       <GlassNavbar

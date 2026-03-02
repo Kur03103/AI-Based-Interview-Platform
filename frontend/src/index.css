@@ -230,3 +230,62 @@ code {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #4f46e5, #7c3aed);
 }
+
+/* =============================================
+   DARK MODE: Glassmorphism card overrides
+   Handles all bg-white/* cards in sections
+   without editing each file individually
+   ============================================= */
+
+/* Override white glassmorphism backgrounds to dark in dark mode */
+.dark [class*="bg-white/"] {
+  background-color: rgba(17, 24, 39, 0.75) !important;
+}
+
+/* Override white/light border colors to dark in dark mode */
+.dark [class*="border-white/"] {
+  border-color: rgba(75, 85, 99, 0.5) !important;
+}
+
+/* =============================================
+   DARK MODE: Text color overrides inside glass cards
+   Fixes black/dark text on now-dark card backgrounds
+   Uses high specificity to only target descendants
+   of glass cards (doesn't break explicit dark: variants)
+   ============================================= */
+
+/* Primary dark text → white */
+.dark [class*="bg-white/"] .text-gray-900,
+.dark [class*="bg-white/"] [class*="text-gray-900"] {
+  color: rgb(255, 255, 255);
+}
+
+/* Secondary dark text → light gray */
+.dark [class*="bg-white/"] .text-gray-800,
+.dark [class*="bg-white/"] [class*="text-gray-800"] {
+  color: rgb(229, 231, 235);
+}
+
+/* Body text → medium light gray */
+.dark [class*="bg-white/"] .text-gray-700,
+.dark [class*="bg-white/"] [class*="text-gray-700"] {
+  color: rgb(209, 213, 219);
+}
+
+/* Muted text → keep readable */
+.dark [class*="bg-white/"] .text-gray-600,
+.dark [class*="bg-white/"] [class*="text-gray-600"] {
+  color: rgb(156, 163, 175);
+}
+
+.dark [class*="bg-white/"] .text-gray-500,
+.dark [class*="bg-white/"] [class*="text-gray-500"] {
+  color: rgb(107, 114, 128);
+}
+
+/* Also handle bg-white (without opacity modifier) */
+.dark [class="bg-white"] .text-gray-900,
+.dark .dark\:bg-gray-800 .text-gray-900:not([class*="dark:"]),
+.dark .dark\:bg-gray-900 .text-gray-900:not([class*="dark:"]) {
+  color: rgb(255, 255, 255);
+}
