@@ -1,107 +1,61 @@
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import {
   motion,
   useMotionValue,
   useTransform,
-  animate,
   useSpring,
+  useInView,
 } from "framer-motion";
 
-// Quick access to icons
-const PlayIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
-    className="w-8 h-8"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
-    />
-  </svg>
-);
-
-const DocIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
-    className="w-8 h-8"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-    />
-  </svg>
-);
-
-const BulbIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
-    className="w-8 h-8"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M12 18v-5.25m0 0a6.001 6.001 0 00-5.951 5.808 6.75 6.75 0 006.637 6.663c-.255.032-.512.049-.773.049-.261 0-.518-.017-.773-.049a6.75 6.75 0 006.637-6.663A6.001 6.001 4.5 0 0012 12.75zm0 0a6.001 6.001 0 015.951 5.808 6.75 6.75 0 01-6.637 6.663c.255.032.512.049.773.049.261 0.518-.017.773-.049a6.75 6.75 0 01-6.637-6.663A6.001 6.001 0 0112 12.75z"
-    />
-  </svg>
-);
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
+/* ─────────────────────────────────────────────────────────────
+   ANIMATION VARIANTS
+───────────────────────────────────────────────────────────── */
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: (i = 0) => ({
     opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.2 },
-  },
-};
-
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
     y: 0,
-    opacity: 1,
-    transition: { type: "spring", stiffness: 100, damping: 12 },
-  },
+    transition: { duration: 0.6, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] },
+  }),
 };
 
-function FeatureCard({ title, description, icon, color, buttonText, onClick }) {
-  // Parallax Tilt Effect
+const fadeLeft = {
+  hidden: { opacity: 0, x: -40 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.6, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] },
+  }),
+};
+
+const scaleIn = {
+  hidden: { opacity: 0, scale: 0.88 },
+  visible: (i = 0) => ({
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.55, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] },
+  }),
+};
+
+/* ─────────────────────────────────────────────────────────────
+   3D TILT CARD
+───────────────────────────────────────────────────────────── */
+function TiltCard({ children, className = "" }) {
   const ref = useRef(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
+  const xSpring = useSpring(x, { stiffness: 300, damping: 30 });
+  const ySpring = useSpring(y, { stiffness: 300, damping: 30 });
+  const rotateX = useTransform(ySpring, [-0.5, 0.5], ["6deg", "-6deg"]);
+  const rotateY = useTransform(xSpring, [-0.5, 0.5], ["-6deg", "6deg"]);
 
-  const mouseXSpring = useSpring(x);
-  const mouseYSpring = useSpring(y);
-
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ["7deg", "-7deg"]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ["-7deg", "7deg"]);
-
-  const handleMouseMove = (e) => {
+  const onMove = (e) => {
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    const xPct = mouseX / width - 0.5;
-    const yPct = mouseY / height - 0.5;
-    x.set(xPct);
-    y.set(yPct);
+    x.set((e.clientX - rect.left) / rect.width - 0.5);
+    y.set((e.clientY - rect.top) / rect.height - 0.5);
   };
-
-  const handleMouseLeave = () => {
+  const onLeave = () => {
     x.set(0);
     y.set(0);
   };
@@ -109,60 +63,90 @@ function FeatureCard({ title, description, icon, color, buttonText, onClick }) {
   return (
     <motion.div
       ref={ref}
-      variants={itemVariants}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-      className="relative h-full"
-      onClick={onClick}
-      whileHover={{ y: -8 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      className={className}
     >
-      <div
-        className="relative h-full overflow-hidden rounded-3xl bg-white/70 backdrop-blur-2xl p-8 border border-white/60 hover:shadow-2xl hover:shadow-indigo-500/20 transition-all duration-500 cursor-pointer group"
-        style={{ transform: "translateZ(20px)" }}
-      >
-        {/* Animated Glow on Hover */}
-        <div
-          className={`absolute -inset-px rounded-3xl opacity-0 group-hover:opacity-100 bg-gradient-to-r ${color} blur-xl transition-opacity duration-700`}
-        />
+      {children}
+    </motion.div>
+  );
+}
 
-        {/* Content */}
-        <div className="relative z-10">
+/* ─────────────────────────────────────────────────────────────
+   QUICK ACTION CARD
+───────────────────────────────────────────────────────────── */
+function ActionCard({
+  title,
+  description,
+  icon,
+  gradient,
+  accentColor,
+  badge,
+  cta,
+  onClick,
+  index,
+}) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-60px 0px" });
+
+  return (
+    <motion.div
+      ref={ref}
+      custom={index}
+      variants={scaleIn}
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+      className="h-full"
+    >
+      <TiltCard className="h-full cursor-pointer">
+        <motion.div
+          onClick={onClick}
+          whileHover={{ y: -6 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          className="relative h-full rounded-3xl overflow-hidden bg-white/70 dark:bg-gray-800/70 backdrop-blur-2xl border border-white/60 dark:border-gray-700/50 p-8 group hover:shadow-2xl transition-shadow duration-500"
+          style={{ transform: "translateZ(20px)" }}
+        >
           <div
-            className={`w-16 h-16 rounded-2xl flex items-center justify-center bg-gradient-to-tr ${color} text-white shadow-lg mb-6 group-hover:scale-110 transition-transform duration-500 ease-out`}
+            className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-10 dark:group-hover:opacity-20 transition-opacity duration-500 rounded-3xl`}
+          />
+
+          {badge && (
+            <span className="absolute top-5 right-5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300">
+              {badge}
+            </span>
+          )}
+
+          <div
+            className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg mb-6 group-hover:scale-110 transition-transform duration-500`}
             style={{ transform: "translateZ(40px)" }}
           >
             {icon}
           </div>
 
           <h3
-            className="text-2xl font-bold text-gray-900 mb-3 tracking-tight group-hover:text-indigo-900 transition-colors"
+            className="text-xl font-bold text-gray-900 dark:text-white mb-2 tracking-tight"
             style={{ transform: "translateZ(30px)" }}
           >
             {title}
           </h3>
           <p
-            className="text-gray-600 text-sm leading-relaxed mb-8"
+            className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-8"
             style={{ transform: "translateZ(20px)" }}
           >
             {description}
           </p>
 
           <div
-            className="flex items-center text-sm font-bold group-hover:translate-x-2 transition-transform duration-300"
+            className={`flex items-center gap-2 text-sm font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent group-hover:translate-x-2 transition-transform duration-300`}
             style={{ transform: "translateZ(30px)" }}
           >
-            <span
-              className={`bg-clip-text text-transparent bg-gradient-to-r ${color}`}
-            >
-              {buttonText}
-            </span>
+            <span>{cta}</span>
             <svg
-              className="w-4 h-4 ml-2"
+              className="w-4 h-4 text-indigo-500"
               fill="none"
-              viewBox="0 0 24 24"
               stroke="currentColor"
+              viewBox="0 0 24 24"
             >
               <path
                 strokeLinecap="round"
@@ -172,295 +156,792 @@ function FeatureCard({ title, description, icon, color, buttonText, onClick }) {
               />
             </svg>
           </div>
-        </div>
-      </div>
+
+          <div
+            className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r ${gradient} scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left rounded-b-3xl`}
+          />
+        </motion.div>
+      </TiltCard>
     </motion.div>
   );
 }
 
-function AnimatedCounter({ value }) {
-  const count = useMotionValue(0);
-  const rounded = useTransform(count, Math.round);
+/* ─────────────────────────────────────────────────────────────
+   JOURNEY STEP
+───────────────────────────────────────────────────────────── */
+function JourneyStep({
+  step,
+  title,
+  description,
+  icon,
+  gradient,
+  isLast,
+  index,
+}) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-60px 0px" });
 
-  useEffect(() => {
-    const animation = animate(count, value, {
-      duration: 1.5,
-      type: "spring",
-      bounce: 0,
-    });
-    return animation.stop;
-  }, [value, count]);
+  return (
+    <div ref={ref} className="relative flex flex-col items-center text-center">
+      {!isLast && (
+        <motion.div
+          initial={{ scaleX: 0 }}
+          animate={isInView ? { scaleX: 1 } : { scaleX: 0 }}
+          transition={{
+            duration: 0.8,
+            delay: index * 0.2 + 0.4,
+            ease: "easeOut",
+          }}
+          className="hidden lg:block absolute top-10 h-0.5 bg-gradient-to-r from-indigo-300 to-purple-200 dark:from-indigo-800 dark:to-purple-900 origin-left"
+          style={{ width: "80%", left: "55%" }}
+        />
+      )}
 
-  return <motion.span>{rounded}</motion.span>;
+      <motion.div
+        custom={index}
+        variants={fadeUp}
+        initial="hidden"
+        animate={isInView ? "visible" : "hidden"}
+        className="flex flex-col items-center"
+      >
+        <div className="relative mb-4">
+          <div
+            className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-xl shadow-indigo-500/20`}
+          >
+            {icon}
+          </div>
+          <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white dark:bg-gray-900 border-2 border-indigo-400 flex items-center justify-center">
+            <span className="text-xs font-black text-indigo-600">{step}</span>
+          </div>
+        </div>
+
+        <h4 className="text-base font-bold text-gray-900 dark:text-white mb-1">
+          {title}
+        </h4>
+        <p className="text-sm text-gray-500 dark:text-gray-400 max-w-[140px] leading-relaxed">
+          {description}
+        </p>
+      </motion.div>
+    </div>
+  );
 }
 
-function StatCard({ label, value, subtext, color }) {
+/* ─────────────────────────────────────────────────────────────
+   HIGHLIGHT CARD
+───────────────────────────────────────────────────────────── */
+function HighlightCard({ icon, title, text, gradient, index }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-60px 0px" });
+
   return (
     <motion.div
-      variants={itemVariants}
-      whileHover={{ y: -4, scale: 1.02 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      className="relative bg-white/70 backdrop-blur-2xl rounded-2xl p-6 border border-white/60 overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300"
+      ref={ref}
+      custom={index}
+      variants={fadeUp}
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+      whileHover={{ y: -5, scale: 1.02 }}
+      transition={{ type: "spring", stiffness: 300, damping: 22 }}
+      className="relative rounded-2xl bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/60 dark:border-gray-700/50 p-6 overflow-hidden group hover:shadow-xl hover:shadow-indigo-500/10 transition-shadow duration-300"
     >
-      {/* Animated Gradient Background */}
       <div
-        className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl ${color} opacity-5 rounded-bl-full group-hover:scale-125 group-hover:opacity-10 transition-all duration-500`}
+        className={`absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl ${gradient} opacity-[0.07] rounded-bl-full group-hover:scale-125 group-hover:opacity-[0.13] transition-all duration-500`}
       />
 
-      <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2 z-10 relative">
-        {label}
-      </p>
-      <div className="flex items-end space-x-2 relative z-10">
-        <h4 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-          <AnimatedCounter value={parseFloat(value) || 0} />
-        </h4>
-        {subtext && (
-          <span
-            className={`text-sm font-medium mb-1.5 ${subtext.includes("+") ? "text-emerald-500" : "text-gray-400"}`}
-          >
-            {subtext}
-          </span>
-        )}
+      <div
+        className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-md mb-4`}
+      >
+        {icon}
       </div>
+      <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-1">
+        {title}
+      </h4>
+      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+        {text}
+      </p>
+    </motion.div>
+  );
+}
 
-      <div className="w-full bg-gradient-to-r from-gray-100 to-gray-200 h-2 mt-4 rounded-full overflow-hidden relative z-10">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: "60%" }}
-          transition={{ duration: 1.5, ease: "easeOut", delay: 0.2 }}
-          className={`h-full bg-gradient-to-r ${color} shadow-lg`}
-        />
+/* ─────────────────────────────────────────────────────────────
+   TIP CARD
+───────────────────────────────────────────────────────────── */
+function TipCard({ number, tip, category, gradient, index }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-60px 0px" });
+
+  return (
+    <motion.div
+      ref={ref}
+      custom={index}
+      variants={fadeLeft}
+      initial="hidden"
+      animate={isInView ? "visible" : "hidden"}
+      className="flex gap-4 p-5 rounded-2xl bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-white/60 dark:border-gray-700/50 hover:shadow-lg transition-shadow duration-300"
+    >
+      <div
+        className={`flex-shrink-0 w-9 h-9 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white text-xs font-black shadow-md`}
+      >
+        {number}
+      </div>
+      <div>
+        <span
+          className={`text-[10px] font-bold uppercase tracking-wider bg-gradient-to-r ${gradient} bg-clip-text text-transparent`}
+        >
+          {category}
+        </span>
+        <p className="text-sm text-gray-700 dark:text-gray-300 mt-0.5 leading-relaxed">
+          {tip}
+        </p>
       </div>
     </motion.div>
   );
 }
 
+/* ─────────────────────────────────────────────────────────────
+   MAIN DASHBOARD
+───────────────────────────────────────────────────────────── */
 export default function Dashboard({ userName, setActiveSection }) {
-  const cards = [
+  const heroRef = useRef(null);
+  const isHeroInView = useInView(heroRef, { once: true });
+
+  const actions = [
     {
-      id: 1,
       title: "AI Interview",
       description:
-        "Practice with AI-powered mock interviews. Get real-time feedback on your responses.",
-      icon: <PlayIcon />,
-      color: "from-blue-500 to-indigo-600",
-      buttonText: "Start Now",
+        "Practice live mock interviews with voice interaction. Get instant AI feedback on every answer.",
+      icon: (
+        <svg
+          className="w-7 h-7"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
+          />
+        </svg>
+      ),
+      gradient: "from-blue-500 to-indigo-600",
+      accentColor: "text-indigo-400",
+      badge: "LIVE AI",
+      cta: "Start Now",
       onClick: () => setActiveSection("interview"),
     },
     {
-      id: 2,
       title: "Smart Resume",
       description:
-        "Upload and analyze your resume with AI. Get ATS optimization tips instantly.",
-      icon: <DocIcon />,
-      color: "from-purple-500 to-fuchsia-600",
-      buttonText: "Upload",
+        "Upload your resume for instant ATS scoring, keyword analysis, and improvement suggestions.",
+      icon: (
+        <svg
+          className="w-7 h-7"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
+          />
+        </svg>
+      ),
+      gradient: "from-purple-500 to-fuchsia-600",
+      accentColor: "text-purple-400",
+      badge: "ATS READY",
+      cta: "Upload Resume",
       onClick: () => setActiveSection("resume"),
     },
     {
-      id: 3,
-      title: "Recommendations",
+      title: "Job Match",
       description:
-        "Get AI-powered job recommendations and resume quality predictions instantly.",
-      icon: <BulbIcon />,
-      color: "from-emerald-400 to-teal-500",
-      buttonText: "Get Jobs",
+        "Get AI-powered job recommendations tailored to your skills, experience, and career goals.",
+      icon: (
+        <svg
+          className="w-7 h-7"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
+          />
+        </svg>
+      ),
+      gradient: "from-emerald-400 to-teal-600",
+      accentColor: "text-emerald-400",
+      badge: "SMART MATCH",
+      cta: "Get Matches",
       onClick: () => setActiveSection("recommendations"),
     },
   ];
 
+  const journey = [
+    {
+      step: 1,
+      title: "Upload Resume",
+      description: "Import your CV for instant AI analysis",
+      gradient: "from-blue-500 to-indigo-600",
+      icon: (
+        <svg
+          className="w-8 h-8"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+          />
+        </svg>
+      ),
+    },
+    {
+      step: 2,
+      title: "Practice Interview",
+      description: "Live voice interview with AI coach",
+      gradient: "from-purple-500 to-violet-600",
+      icon: (
+        <svg
+          className="w-8 h-8"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z"
+          />
+        </svg>
+      ),
+    },
+    {
+      step: 3,
+      title: "Get Report",
+      description: "Detailed feedback with emotion & tone analysis",
+      gradient: "from-pink-500 to-rose-600",
+      icon: (
+        <svg
+          className="w-8 h-8"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0H3"
+          />
+        </svg>
+      ),
+    },
+    {
+      step: 4,
+      title: "Land the Job",
+      description: "Personalized tips to ace real interviews",
+      gradient: "from-amber-400 to-orange-500",
+      icon: (
+        <svg
+          className="w-8 h-8"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.8}
+            d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 002.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 012.916.52 6.003 6.003 0 01-5.395 4.972m0 0a6.726 6.726 0 01-2.749 1.35m0 0a6.772 6.772 0 01-3.044 0"
+          />
+        </svg>
+      ),
+    },
+  ];
+
+  const highlights = [
+    {
+      title: "Voice + Text Modes",
+      text: "Speak naturally or type your answers. The AI adapts to your preferred communication style.",
+      gradient: "from-blue-500 to-indigo-600",
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+          />
+        </svg>
+      ),
+    },
+    {
+      title: "Emotion & Tone Detection",
+      text: "Real-time analysis of your confidence, sentiment, and communication tone during interviews.",
+      gradient: "from-purple-500 to-fuchsia-600",
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15.182 15.182a4.5 4.5 0 01-6.364 0M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z"
+          />
+        </svg>
+      ),
+    },
+    {
+      title: "Downloadable Reports",
+      text: "Full HTML report with scores, skill breakdown, feedback, and complete transcript after each session.",
+      gradient: "from-emerald-400 to-teal-600",
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+          />
+        </svg>
+      ),
+    },
+    {
+      title: "Technical & Behavioral",
+      text: "Specialized interview modes for coding roles and leadership positions with adaptive AI questions.",
+      gradient: "from-pink-500 to-rose-600",
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+          />
+        </svg>
+      ),
+    },
+    {
+      title: "ATS Resume Scoring",
+      text: "Check how well your resume passes applicant tracking systems and get keyword recommendations.",
+      gradient: "from-amber-400 to-orange-500",
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z"
+          />
+        </svg>
+      ),
+    },
+    {
+      title: "Smart Job Matching",
+      text: "AI-powered recommendations matched to your resume, skills, and ideal job profile.",
+      gradient: "from-sky-400 to-cyan-600",
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+          />
+        </svg>
+      ),
+    },
+  ];
+
+  const tips = [
+    {
+      number: "01",
+      category: "Confidence",
+      tip: "Use the STAR method — Situation, Task, Action, Result — to structure every behavioral answer.",
+      gradient: "from-blue-500 to-indigo-600",
+    },
+    {
+      number: "02",
+      category: "Technical",
+      tip: "Think out loud during coding questions. Interviewers value your thought process as much as the solution.",
+      gradient: "from-purple-500 to-fuchsia-600",
+    },
+    {
+      number: "03",
+      category: "Body Language",
+      tip: "Sit upright, maintain eye contact with the camera, and smile naturally to project confidence.",
+      gradient: "from-emerald-400 to-teal-600",
+    },
+    {
+      number: "04",
+      category: "Preparation",
+      tip: "Research the company's products, culture, and recent news. Tailor answers to their specific context.",
+      gradient: "from-pink-500 to-rose-600",
+    },
+    {
+      number: "05",
+      category: "Communication",
+      tip: "Pause before answering complex questions. A 2–3 second pause shows thoughtfulness, not hesitation.",
+      gradient: "from-amber-400 to-orange-500",
+    },
+    {
+      number: "06",
+      category: "Follow-up",
+      tip: "Always ask 1–2 thoughtful questions at the end. It shows genuine interest and engagement.",
+      gradient: "from-sky-400 to-cyan-600",
+    },
+  ];
+
   return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-      className="space-y-16 lg:space-y-24"
-    >
-      {/* Hero Section */}
-      <motion.div variants={itemVariants} className="relative">
-        {/* Floating Gradient Light */}
+    <div className="space-y-24 lg:space-y-32 pb-16">
+      {/* ── HERO ─────────────────────────────────────────────────── */}
+      <section
+        ref={heroRef}
+        className="relative text-center max-w-5xl mx-auto pt-4"
+      >
         <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-indigo-300/30 via-purple-300/30 to-pink-300/30 rounded-full blur-3xl pointer-events-none -z-10"
+          animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-gradient-to-r from-indigo-300/30 via-purple-300/30 to-pink-300/30 dark:from-indigo-900/30 dark:via-purple-900/30 dark:to-pink-900/20 rounded-full blur-3xl -z-10 pointer-events-none"
         />
 
-        <div className="text-center max-w-5xl mx-auto relative z-10">
-          {/* Badge */}
+        <motion.div
+          custom={0}
+          variants={fadeUp}
+          initial="hidden"
+          animate={isHeroInView ? "visible" : "hidden"}
+          className="inline-flex items-center gap-2 px-4 py-1.5 mb-8 rounded-full bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border border-white/60 dark:border-gray-700/50 shadow-lg"
+        >
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 backdrop-blur-xl border border-white/60 shadow-lg mb-8"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            className="w-5 h-5 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center"
           >
-            <motion.div
-              animate={{
-                rotate: 360,
-              }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              className="w-5 h-5 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center"
+            <svg
+              className="w-3 h-3 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 strokeWidth={2}
+                d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
+              />
+            </svg>
+          </motion.div>
+          <span className="text-xs font-bold text-gray-700 dark:text-gray-300 tracking-wide">
+            AI-POWERED INTERVIEW COACH
+          </span>
+        </motion.div>
+
+        <motion.h1
+          custom={1}
+          variants={fadeUp}
+          initial="hidden"
+          animate={isHeroInView ? "visible" : "hidden"}
+          className="text-5xl sm:text-6xl lg:text-7xl font-black leading-[1.08] tracking-tight mb-6"
+        >
+          <span className="text-gray-900 dark:text-white">Welcome back,</span>
+          <br />
+          <span className="relative inline-block">
+            <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent">
+              {userName}
+            </span>
+            <motion.div
+              animate={{ scaleX: [0, 1, 1, 0] }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                repeatDelay: 1.5,
+                ease: "easeInOut",
+              }}
+              className="absolute -bottom-1 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 origin-left rounded-full"
+            />
+          </span>
+        </motion.h1>
+
+        <motion.p
+          custom={2}
+          variants={fadeUp}
+          initial="hidden"
+          animate={isHeroInView ? "visible" : "hidden"}
+          className="text-xl sm:text-2xl text-gray-500 dark:text-gray-400 max-w-2xl mx-auto font-light leading-relaxed mb-10"
+        >
+          Your AI coach is ready.{" "}
+          <span className="text-gray-800 dark:text-gray-200 font-medium">
+            Practice, improve, and land your dream job
+          </span>{" "}
+          with intelligent feedback.
+        </motion.p>
+
+        <motion.div
+          custom={3}
+          variants={fadeUp}
+          initial="hidden"
+          animate={isHeroInView ? "visible" : "hidden"}
+          className="flex flex-col sm:flex-row items-center justify-center gap-4"
+        >
+          <motion.button
+            onClick={() => setActiveSection("interview")}
+            whileHover={{
+              scale: 1.05,
+              boxShadow: "0 20px 40px rgba(99,102,241,0.35)",
+            }}
+            whileTap={{ scale: 0.97 }}
+            className="group relative px-8 py-4 rounded-2xl font-bold text-lg text-white overflow-hidden shadow-2xl shadow-indigo-500/30"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_100%] animate-gradient" />
+            <span className="relative flex items-center gap-2">
+              <svg
+                className="w-5 h-5"
+                fill="none"
                 stroke="currentColor"
-                className="w-3 h-3 text-white"
+                viewBox="0 0 24 24"
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
+                  strokeWidth={2}
+                  d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
+                />
+              </svg>
+              Start Interview
+            </span>
+          </motion.button>
+
+          <motion.button
+            onClick={() => setActiveSection("resume")}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.97 }}
+            className="px-8 py-4 rounded-2xl font-bold text-lg text-gray-700 dark:text-gray-200 bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl border border-white/60 dark:border-gray-700/50 hover:bg-white/90 dark:hover:bg-gray-700/80 transition-all shadow-lg"
+          >
+            Upload Resume
+          </motion.button>
+        </motion.div>
+      </section>
+
+      {/* ── QUICK ACTION CARDS ────────────────────────────────────── */}
+      <section>
+        <div className="text-center mb-10">
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px 0px" }}
+            className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-500 dark:text-indigo-400 mb-3"
+          >
+            What would you like to do?
+          </motion.p>
+          <motion.h2
+            custom={1}
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px 0px" }}
+            className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white"
+          >
+            Pick your path
+          </motion.h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {actions.map((card, i) => (
+            <ActionCard key={card.title} {...card} index={i} />
+          ))}
+        </div>
+      </section>
+
+      {/* ── JOURNEY STEPS ─────────────────────────────────────────── */}
+      <section className="relative">
+        <div className="text-center mb-14">
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px 0px" }}
+            className="text-xs font-bold uppercase tracking-[0.2em] text-purple-500 dark:text-purple-400 mb-3"
+          >
+            How it works
+          </motion.p>
+          <motion.h2
+            custom={1}
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px 0px" }}
+            className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white"
+          >
+            Your journey to success
+          </motion.h2>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-6 relative">
+          {journey.map((step, i) => (
+            <JourneyStep
+              key={step.step}
+              {...step}
+              isLast={i === journey.length - 1}
+              index={i}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* ── PLATFORM HIGHLIGHTS ───────────────────────────────────── */}
+      <section>
+        <div className="text-center mb-10">
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px 0px" }}
+            className="text-xs font-bold uppercase tracking-[0.2em] text-emerald-500 dark:text-emerald-400 mb-3"
+          >
+            Everything you need
+          </motion.p>
+          <motion.h2
+            custom={1}
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px 0px" }}
+            className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white"
+          >
+            Platform capabilities
+          </motion.h2>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {highlights.map((h, i) => (
+            <HighlightCard key={h.title} {...h} index={i} />
+          ))}
+        </div>
+      </section>
+
+      {/* ── PRO TIPS ──────────────────────────────────────────────── */}
+      <section>
+        <div className="text-center mb-10">
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px 0px" }}
+            className="text-xs font-bold uppercase tracking-[0.2em] text-pink-500 dark:text-pink-400 mb-3"
+          >
+            Interview playbook
+          </motion.p>
+          <motion.h2
+            custom={1}
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px 0px" }}
+            className="text-3xl sm:text-4xl font-black text-gray-900 dark:text-white"
+          >
+            Pro tips to ace your interview
+          </motion.h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {tips.map((t, i) => (
+            <TipCard key={t.number} {...t} index={i} />
+          ))}
+        </div>
+      </section>
+
+      {/* ── FINAL CTA BANNER ──────────────────────────────────────── */}
+      <section>
+        <motion.div
+          variants={scaleIn}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-60px 0px" }}
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-10 md:p-14 text-center shadow-2xl shadow-indigo-500/30"
+        >
+          <div className="absolute top-0 left-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
+          <div className="absolute bottom-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
+
+          <div className="relative z-10">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+              className="w-14 h-14 mx-auto mb-6 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center"
+            >
+              <svg
+                className="w-7 h-7 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.8}
+                  d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
                 />
               </svg>
             </motion.div>
-            <span className="text-sm font-semibold text-gray-700">
-              AI-Powered Platform
-            </span>
-          </motion.div>
 
-          {/* Main Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight mb-6 leading-[1.1]"
-          >
-            Welcome back, <br className="hidden sm:block" />
-            <motion.span
-              className="relative inline-block"
-              whileHover={{ scale: 1.02 }}
-            >
-              <span className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                {userName}
-              </span>
-              <motion.div
-                animate={{
-                  scaleX: [0, 1, 1, 0],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  repeatDelay: 1,
-                  ease: "easeInOut",
-                }}
-                className="absolute bottom-2 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-500 origin-left"
-              />
-            </motion.span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="text-xl sm:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed font-light mb-12"
-          >
-            Your AI interview coach is ready.{" "}
-            <span className="text-gray-900 font-medium">
-              Practice, improve, and land your dream job
-            </span>{" "}
-            with intelligent feedback.
-          </motion.p>
-
-          {/* CTA Buttons */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
-          >
+            <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">
+              Ready to land your dream job?
+            </h2>
+            <p className="text-white/80 text-lg max-w-xl mx-auto mb-8 font-light">
+              Start your first AI-powered interview session now. Get real-time
+              feedback and a full performance report.
+            </p>
             <motion.button
               onClick={() => setActiveSection("interview")}
               whileHover={{
                 scale: 1.05,
-                boxShadow: "0 20px 40px rgba(99, 102, 241, 0.3)",
+                boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
               }}
-              whileTap={{ scale: 0.95 }}
-              className="group relative px-8 py-4 rounded-2xl font-bold text-lg text-white overflow-hidden shadow-2xl shadow-indigo-500/30"
+              whileTap={{ scale: 0.97 }}
+              className="px-10 py-4 rounded-2xl bg-white text-indigo-700 font-bold text-lg shadow-2xl hover:bg-white/90 transition-all"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_100%] animate-gradient" />
-              <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <span className="relative flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
-                  />
-                </svg>
-                Start Interview
-              </span>
+              Start Free Interview →
             </motion.button>
-
-            <motion.button
-              onClick={() => setActiveSection("about")}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="px-8 py-4 rounded-2xl font-bold text-lg text-gray-700 bg-white/60 backdrop-blur-xl border border-white/60 hover:bg-white/80 transition-all shadow-lg"
-            >
-              Learn More
-            </motion.button>
-          </motion.div>
-        </div>
-      </motion.div>
-
-      {/* Feature Cards */}
-      <motion.div
-        variants={containerVariants}
-        className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8"
-      >
-        {cards.map((card, i) => (
-          <FeatureCard key={card.id} {...card} delay={i * 0.1} />
-        ))}
-      </motion.div>
-
-      {/* Stats Section */}
-      <motion.div variants={itemVariants} className="pt-8">
-        <div className="text-center mb-12">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-3xl font-bold text-gray-900 mb-3"
-          >
-            Your Performance
-          </motion.h2>
-          <p className="text-gray-600">
-            Track your interview preparation progress
-          </p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <StatCard
-            label="Interviews Completed"
-            value="0"
-            subtext="+0 this week"
-            color="from-blue-400 to-blue-600"
-          />
-          <StatCard
-            label="Average Score"
-            value="0.0"
-            subtext="Needs Data"
-            color="from-purple-400 to-purple-600"
-          />
-          <StatCard
-            label="Skills Assessed"
-            value="0"
-            subtext="Total Skills"
-            color="from-pink-400 to-pink-600"
-          />
-        </div>
-      </motion.div>
-    </motion.div>
+          </div>
+        </motion.div>
+      </section>
+    </div>
   );
 }
