@@ -1,11 +1,52 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, generics, permissions
 from django.conf import settings
-from .models import InterviewSession
+from .models import InterviewSession, InterviewSignup
+from .serializers import InterviewSignupSerializer, InterviewSessionSerializer
+from accounts.models import CustomUser
 import requests
 import json
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
+
+class InterviewSignupCreateView(generics.CreateAPIView):
+    """
+    API endpoint to create an interview signup for a user.
+    When user signs up for a position, this creates their interview signup record.
+    """
+    serializer_class = InterviewSignupSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def perform_create(self, serializer):
+        # Automatically link to the authenticated user
+        serializer.save(user=self.request.user)
+
+
+class InterviewSignupDetailView(generics.RetrieveUpdateAPIView):
+    """
+    API endpoint to get/update user's interview signup details.
+    """
+    serializer_class = InterviewSignupSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self):
+        return self.request.user.interview_signup
+
+
+class InterviewSignupListView(generics.ListAPIView):
+    """
+    List all interview signups (admin view).
+    """
+    serializer_class = InterviewSignupSerializer
+    permission_classes = [IsAuthenticated]  # Can add IsAdminUser for production
+    
+    def get_queryset(self):
+        # Non-admin users can only see their own
+        if self.request.user.is_staff:
+            return InterviewSignup.objects.all()
+        return InterviewSignup.objects.filter(user=self.request.user)
+
 
 class InterviewView(APIView):
     """

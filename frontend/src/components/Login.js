@@ -30,7 +30,7 @@ const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
   };
 
   return (
-    <form ref={ref} onSubmit={handleLogin} className="space-y-5">
+    <form ref={ref} onSubmit={handleLogin} className="space-y-6 p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md mx-auto">
       <div>
         <label
           htmlFor="login-username"
@@ -44,7 +44,7 @@ const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Enter your username"
-          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition duration-200 hover:border-gray-400 dark:hover:border-gray-500"
+          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition duration-300 shadow-sm hover:shadow-md"
         />
       </div>
 
@@ -61,38 +61,43 @@ const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Enter your password"
-          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition duration-200 hover:border-gray-400 dark:hover:border-gray-500"
+          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 focus:border-transparent transition duration-300 shadow-sm hover:shadow-md"
         />
       </div>
 
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
-          {error}
-        </p>
+        <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+          <p className="text-sm text-red-700 dark:text-red-300 font-medium">
+            {error}
+          </p>
+        </div>
       )}
 
       <button
         type="submit"
-        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold py-3 rounded-lg transition transform hover:scale-105 duration-200 shadow-lg hover:shadow-xl"
+        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 rounded-xl transition transform hover:scale-105 duration-200 shadow-lg hover:shadow-2xl focus:ring-4 focus:ring-indigo-200"
       >
         Sign In
       </button>
 
-      <div className="flex items-center justify-between text-sm">
+      <div className="flex flex-col space-y-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
         <button
           type="button"
           onClick={(e) => e.preventDefault()}
-          className="text-indigo-600 dark:text-indigo-400 hover:underline"
+          className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition duration-200"
         >
           Forgot password?
         </button>
-        <button
-          type="button"
-          onClick={onSwitchToSignup}
-          className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
-        >
-          Create account
-        </button>
+        <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+          Don't have an account?{" "}
+          <button
+            type="button"
+            onClick={onSwitchToSignup}
+            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold transition duration-200"
+          >
+            Sign up for free
+          </button>
+        </div>
       </div>
     </form>
   );

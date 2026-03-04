@@ -21,21 +21,20 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            {/* Public landing page */}
+            <Route path="/" element={<Landing />} />
             <Route path="/landing" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
-            {/* Protected Routes */}
-            {/* <Route element={<ProtectedRoute />}> */}
-            <Route path="/home" element={<Dashboard />} />
-            <Route path="/interview" element={<Interview />} />
-            {/* </Route> */}
+            {/* Protected Routes - requires authentication */}
+            <Route element={<ProtectedRoute />}> 
+              <Route path="/home" element={<Dashboard />} />
+              <Route path="/interview" element={<Interview />} />
+              <Route path="/admin" element={<AdminPanel />} />
+            </Route>
 
-            {/* Admin */}
-            <Route path="/admin" element={<AdminPanel />} />
-
-            {/* Fallback route */}
+            {/* Fallback route: redirect unknown URLs to landing */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>

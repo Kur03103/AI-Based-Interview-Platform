@@ -2,7 +2,94 @@ import React from "react";
 import { Link } from "react-router-dom";
 import ThemeToggle from "../components/ThemeToggle";
 
+// Testimonials data with diverse names and locations
+const testimonials = [
+  {
+    name: "Priya Sharma",
+    location: "Mumbai Tech Hub",
+    year: "2026",
+    quote: "Interview Bloom completely changed our hiring process. The AI insights are invaluable.",
+    rating: 5
+  },
+  {
+    name: "James Chen",
+    location: "San Francisco",
+    year: "2026",
+    quote: "Reduced our hiring time by 70% while improving candidate quality.",
+    rating: 5
+  },
+  {
+    name: "Emma Richardson",
+    location: "London College",
+    year: "2026",
+    quote: "The bias reduction features ensure we hire the best talent fairly.",
+    rating: 5
+  },
+  {
+    name: "Rajesh Kumar",
+    location: "Bangalore Startup",
+    year: "2026",
+    quote: "Best investment we made for our talent acquisition team this year.",
+    rating: 5
+  },
+  {
+    name: "Sophie Dubois",
+    location: "Paris Innovation Zone",
+    year: "2026",
+    quote: "Candidates love the platform. Amazing experience from both sides.",
+    rating: 5
+  }
+];
+
+const workflowSteps = [
+  {
+    icon: "📝",
+    title: "Create Interview",
+    description: "Set up your interview in seconds with customizable questions and formats.",
+    features: ["Custom Questions", "Video Mode", "Technical Assessment"]
+  },
+  {
+    icon: "📅",
+    title: "Schedule & Invite",
+    description: "Automated scheduling sends invites and handles calendar synchronization effortlessly.",
+    features: ["Auto Scheduling", "Email Invites", "Timezone Support"]
+  },
+  {
+    icon: "🤖",
+    title: "AI Conducts Interview",
+    description: "Our advanced AI interviewer conducts the interview with natural conversation flow.",
+    features: ["Natural AI", "Real-time Analysis", "Multi-language"]
+  },
+  {
+    icon: "📊",
+    title: "Get Analytics",
+    description: "Comprehensive reports with skills assessment, scores, and candidate insights.",
+    features: ["Skill Scores", "Sentiment Analysis", "Comparison Reports"]
+  }
+];
+
 const Landing = () => {
+  React.useEffect(() => {
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver(function(entries) {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate-fade-in-up');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+
+    const elements = document.querySelectorAll('[data-scroll-animate]');
+    elements.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
       {/* Navigation */}
@@ -82,39 +169,98 @@ const Landing = () => {
             >
               Get Started Free
             </Link>
-            <button className="flex items-center space-x-2 text-gray-700 dark:text-gray-200 font-semibold hover:text-indigo-600 dark:hover:text-indigo-400 transition duration-200 border-2 border-gray-200 dark:border-gray-700 px-8 py-4 rounded-lg w-full sm:w-auto justify-center hover:border-indigo-600 dark:hover:border-indigo-400">
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
-              </svg>
-              <span>Watch Demo</span>
-            </button>
-          </div>
-
-          <div
-            className="mt-20 relative max-w-5xl mx-auto animate-scale-in"
-            style={{ animationDelay: "600ms" }}
-          >
-            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-25 dark:opacity-40"></div>
-            <div className="relative bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl overflow-hidden aspect-video flex items-center justify-center group cursor-pointer">
-              <div className="absolute inset-0 bg-indigo-600/5 dark:bg-indigo-400/10 group-hover:bg-indigo-600/0 transition-all duration-300"></div>
-              <div className="w-20 h-20 bg-white dark:bg-gray-700 rounded-full shadow-xl flex items-center justify-center transition transform group-hover:scale-110 duration-300 z-10">
-                <svg
-                  className="w-10 h-10 text-indigo-600 dark:text-indigo-400"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </div>
-              <p className="absolute bottom-10 text-gray-400 dark:text-gray-500 font-medium">
-                Platform Demo Video
-              </p>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* Interview Management Section */}
+      <section className="py-24 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <div className="inline-block mb-6 px-6 py-2 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800">
+              <span className="text-indigo-700 dark:text-indigo-300 font-semibold text-sm">Streamlined Interview Management</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
+              Manage Your Entire Interview Lifecycle Seamlessly
+            </h2>
+            <p className="max-w-2xl mx-auto text-lg text-gray-600 dark:text-gray-400">
+              From scheduling to evaluation, our platform handles every aspect of your hiring process with intelligent automation and real-time insights.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            {/* Create & Schedule */}
+            <ManagementCard
+              icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>}
+              title="Create & Schedule"
+              description="Set up interviews in seconds. Automated scheduling syncs with calendars and sends invitations instantly."
+              features={["Auto-scheduling", "Calendar sync", "Instant invites"]}
+              delay="0"
+            />
+            {/* Candidate Tracking */}
+            <ManagementCard
+              icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 10a3 3 0 11-6 0 3 3 0 016 0zM12 14a8 8 0 00-8 8v2h16v-2a8 8 0 00-8-8z" /></svg>}
+              title="Candidate Tracking"
+              description="Track candidates through the entire pipeline. Monitor progress, status, and performance metrics in real-time."
+              features={["Pipeline visibility", "Status updates", "Performance logs"]}
+              delay="100"
+            />
+            {/* Real-Time Feedback */}
+            <ManagementCard
+              icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>}
+              title="Real-Time Feedback"
+              description="Capture notes and feedback during interviews. Collaborative evaluation shared instantly with your team."
+              features={["Live notes", "Team collaboration", "Instant sharing"]}
+              delay="200"
+            />
+            {/* Advanced Analytics */}
+            <ManagementCard
+              icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>}
+              title="Advanced Analytics"
+              description="AI-powered insights analyze performance across candidates. Identify top performers and make data-driven decisions."
+              features={["Score analysis", "Performance trends", "Comparative metrics"]}
+              delay="300"
+            />
+            {/* Automated Scoring */}
+            <ManagementCard
+              icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+              title="Automated Scoring"
+              description="Get objective, bias-free evaluations. Multi-metric scoring covers technical skills, communication, and cultural fit."
+              features={["Fair evaluation", "Multiple metrics", "Bias-free scoring"]}
+              delay="400"
+            />
+            {/* Streamlined Communication */}
+            <ManagementCard
+              icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>}
+              title="Streamlined Communication"
+              description="Keep candidates informed with automated emails and updates. Build strong employer branding throughout the process."
+              features={["Auto email", "Status updates", "Candidate experience"]}
+              delay="500"
+            />
+          </div>
+
+          {/* Workflow Diagram */}
+          <div className="mt-20 bg-white dark:bg-gray-800 rounded-2xl p-8 md:p-12 border border-gray-100 dark:border-gray-700 shadow-xl">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-8 text-center">Interview Management Workflow</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-2">
+              <FlowStep step="1" title="Create Interview" icon="📋" />
+              <div className="hidden md:flex items-center justify-center">
+                <div className="w-8 h-0.5 bg-gradient-to-r from-indigo-500 to-transparent dark:from-indigo-400"></div>
+              </div>
+              <FlowStep step="2" title="Schedule & Invite" icon="📅" />
+              <div className="hidden md:flex items-center justify-center">
+                <div className="w-8 h-0.5 bg-gradient-to-r from-indigo-500 to-transparent dark:from-indigo-400"></div>
+              </div>
+              <FlowStep step="3" title="Conduct Interview" icon="🎙️" />
+              <div className="hidden md:flex items-center justify-center">
+                <div className="w-8 h-0.5 bg-gradient-to-r from-indigo-500 to-transparent dark:from-indigo-400"></div>
+              </div>
+              <FlowStep step="4" title="Review & Evaluate" icon="✅" />
+            </div>
+          </div>
+        </div>
+      </section>
       <section className="py-12 bg-white dark:bg-gray-900 border-y border-gray-100 dark:border-gray-800 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
@@ -206,7 +352,7 @@ const Landing = () => {
                 </svg>
               }
               title="Resume & Skill Analysis"
-              description="Deeply behavior scan based on your brand's intent match with your descriptions to find personal options processing."
+              description="Extract and analyze resumes to identify relevant skills, qualifications, and experience for better candidate matching."
             />
             <FeatureCard
               icon={
@@ -225,7 +371,7 @@ const Landing = () => {
                 </svg>
               }
               title="AI-Powered Planning"
-              description="Automatically defined skills, education, and experiences from creators, hiring relevant content for looking."
+              description="Intelligently plan and structure interviews based on job requirements and candidate qualifications."
             />
             <FeatureCard
               icon={
@@ -269,7 +415,7 @@ const Landing = () => {
                 </svg>
               }
               title="Multi-Metric Scoring"
-              description="Comprehensive evaluation including technical skills, communication, stress, behavior tendencies, and sediment analysis."
+              description="Comprehensive evaluation including technical skills, communication, problem-solving, behavior analysis, and sentiment assessment."
             />
             <FeatureCard
               icon={
@@ -294,88 +440,148 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section
-        id="how-it-works"
-        className="py-24 bg-white dark:bg-gray-900 transition-colors duration-300"
-      >
+      {/* How It Works - Interview Management Workflow */}
+      <section id="how-it-works" className="py-24 bg-white dark:bg-gray-900 transition-colors duration-300" data-scroll-animate>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-              How It Works
+          <div className="text-center mb-20">
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 animate-fade-in-up">
+              Interview Management Workflow
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
-              Simple, fast, and powerful - AI-led interviews in three steps.
+            <p className="text-xl text-gray-600 dark:text-gray-300 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+              Everything you need to create, schedule, conduct, and analyze interviews
             </p>
           </div>
 
-          <div className="relative">
-            {/* Connection Line */}
-            <div className="hidden md:block absolute top-12 left-0 right-0 h-0.5 bg-indigo-100 dark:bg-indigo-900 -z-10"></div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              <Step
-                number="1"
-                title="Launch Interview"
-                description="Configure high-quality online interviews within minutes using our platform."
-                color="bg-blue-600"
-              />
-              <Step
-                number="2"
-                title="AI Analysis"
-                description="Our AI processes video, audio, and responses to generate comprehensive insights."
-                color="bg-purple-600"
-              />
-              <Step
-                number="3"
-                title="Make Decisions"
-                description="Review intelligent insights and sentiments with your team to hire the best talent."
-                color="bg-emerald-600"
-              />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {workflowSteps.map((step, idx) => (
+              <div
+                key={idx}
+                className="group p-8 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2 hover:border-indigo-300 dark:hover:border-indigo-600 animate-fade-in-up"
+                style={{ animationDelay: `${idx * 150}ms` }}
+              >
+                <div className="flex items-start space-x-6">
+                  <div className="flex-shrink-0">
+                    <div className="flex items-center justify-center h-16 w-16 rounded-xl bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/40 dark:to-indigo-900/20 group-hover:scale-110 transition duration-300 text-3xl">
+                      {step.icon}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                      {step.title}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                      {step.description}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {step.features.map((feature, fIdx) => (
+                        <span
+                          key={fIdx}
+                          className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-semibold border border-indigo-100 dark:border-indigo-800 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition duration-300"
+                        >
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="text-4xl font-bold text-indigo-100 dark:text-indigo-900/30 group-hover:text-indigo-200 dark:group-hover:text-indigo-800/50 transition duration-300">
+                    {String(idx + 1).padStart(2, '0')}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Trusted By / Footer Section */}
-      <section className="py-24 bg-gray-900 dark:bg-black text-white transition-colors duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-5xl font-bold mb-8">
-            Trusted by Leading Companies
-          </h2>
-          <p className="text-indigo-300 dark:text-indigo-400 mb-12">
-            Join thousands of companies who hire smarter with Interview Bloom.
-          </p>
-
-          <div className="flex flex-wrap justify-center gap-8 mb-20 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-            {/* Placeholder Logos */}
-            <div className="w-32 h-12 bg-gray-700 dark:bg-gray-800 rounded animate-pulse"></div>
-            <div className="w-32 h-12 bg-gray-700 dark:bg-gray-800 rounded animate-pulse"></div>
-            <div className="w-32 h-12 bg-gray-700 dark:bg-gray-800 rounded animate-pulse"></div>
-            <div className="w-32 h-12 bg-gray-700 dark:bg-gray-800 rounded animate-pulse"></div>
-            <div className="w-32 h-12 bg-gray-700 dark:bg-gray-800 rounded animate-pulse"></div>
+      {/* Testimonials Section */}
+      <section className="py-24 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 transition-colors duration-300" data-scroll-animate>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4 animate-fade-in-up">
+              Trusted by Top Talent
+            </h2>
+            <p className="text-xl text-gray-600 dark:text-gray-300 animate-fade-in-up" style={{ animationDelay: "100ms" }}>
+              Candidates and hiring teams around the world love Interview Bloom
+            </p>
           </div>
 
-          <div className="border-t border-gray-800 dark:border-gray-900 pt-12 flex flex-col md:flex-row justify-between items-center text-gray-400 dark:text-gray-500">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {testimonials.map((testimonial, idx) => (
+              <div
+                key={idx}
+                className="group p-6 bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:-translate-y-2 hover:border-indigo-300 dark:hover:border-indigo-600 animate-fade-in-up"
+                style={{ animationDelay: `${idx * 100}ms` }}
+              >
+                <div className="flex items-center space-x-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg group-hover:scale-110 transition duration-300">
+                    {testimonial.name.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 dark:text-white text-sm">
+                      {testimonial.name}
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {testimonial.location}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 leading-relaxed line-clamp-3">
+                  "{testimonial.quote}"
+                </p>
+                <div className="flex text-yellow-400 mb-3">
+                  {"⭐".repeat(testimonial.rating)}
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {testimonial.year}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-white dark:bg-gray-900 transition-colors duration-300">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+            Ready to Transform Your Hiring?
+          </h2>
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-10">
+            Join companies that hire smarter, faster, and fairer with Interview Bloom.
+          </p>
+          <Link
+            to="/register"
+            className="inline-block bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-10 py-4 rounded-xl font-bold text-lg transition transform hover:scale-105 duration-200 shadow-xl hover:shadow-2xl"
+          >
+            Start Free Trial
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer */}
+      {/* Footer */}
+      <section className="py-12 bg-gray-900 dark:bg-black text-gray-400 dark:text-gray-500 transition-colors duration-300 border-t border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
               <div className="w-6 h-6 bg-indigo-600 dark:bg-indigo-500 rounded flex items-center justify-center">
                 <span className="text-white font-bold text-xs italic">B</span>
               </div>
               <span className="font-bold text-white">Interview Bloom</span>
             </div>
-            <div className="flex space-x-6">
-              <a href="#" className="hover:text-white transition">
+            <div className="flex space-x-6 mb-4 md:mb-0">
+              <a href="#" className="hover:text-white transition duration-200">
                 Privacy
               </a>
-              <a href="#" className="hover:text-white transition">
+              <a href="#" className="hover:text-white transition duration-200">
                 Terms
               </a>
-              <a href="#" className="hover:text-white transition">
+              <a href="#" className="hover:text-white transition duration-200">
                 Contact
               </a>
             </div>
-            <div className="mt-4 md:mt-0">
-              © 2025 Interview Bloom. All rights reserved.
+            <div>
+              © 2026 Interview Bloom. All rights reserved.
             </div>
           </div>
         </div>
@@ -383,6 +589,43 @@ const Landing = () => {
     </div>
   );
 };
+
+const ManagementCard = ({ icon, title, description, features, delay }) => (
+  <div
+    className="group p-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-2 hover:border-indigo-300 dark:hover:border-indigo-600 animate-fade-in-up"
+    style={{ animationDelay: `${delay}ms` }}
+  >
+    <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 mb-4 group-hover:scale-110 transition duration-300">
+      {icon}
+    </div>
+    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+      {title}
+    </h3>
+    <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+      {description}
+    </p>
+    <div className="flex flex-wrap gap-2">
+      {features.map((feature, idx) => (
+        <span
+          key={idx}
+          className="inline-flex items-center px-2 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-semibold border border-indigo-100 dark:border-indigo-800"
+        >
+          {feature}
+        </span>
+      ))}
+    </div>
+  </div>
+);
+
+const FlowStep = ({ step, title, icon }) => (
+  <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 transition duration-300">
+    <div className="text-4xl mb-3">{icon}</div>
+    <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-1">Step {step}</span>
+    <h4 className="text-sm font-bold text-gray-900 dark:text-white text-center">
+      {title}
+    </h4>
+  </div>
+);
 
 const FeatureCard = ({ icon, title, description }) => (
   <div className="card-base p-8 hover:-translate-y-1 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-xl transition-all duration-300">
@@ -392,7 +635,7 @@ const FeatureCard = ({ icon, title, description }) => (
     <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
       {title}
     </h3>
-    <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+    <p className="text-gray-600 dark:text-gray-400 mb-0">
       {description}
     </p>
   </div>

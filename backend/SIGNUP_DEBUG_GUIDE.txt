@@ -1,0 +1,128 @@
+"""
+SIGNUP DEBUGGING GUIDE
+======================
+
+The error you got: {password: Array(1)} means password validation failed.
+
+SOLUTION:
+=========
+
+1. STOP the Django server (if running)
+   - Press CTRL+C in the terminal
+
+2. RESTART the Django server:
+   cd e:\Documents\AI-Based-Interview-Platform\backend
+   .\venv\Scripts\activate
+   python manage.py runserver
+
+3. TEST signup with CORRECT password (must be 8+ chars):
+   Frontend form:
+   - Username: john_smith
+   - Email: john.smith@example.com
+   - Full Name: John Smith
+   - Age: 28
+   - Password: MyPassword123  (at least 8 characters, mix of upper/lower/numbers)
+   - Confirm Password: MyPassword123
+
+4. IF IT STILL FAILS, check these:
+   
+   A) Check Django console for detailed error:
+      - Look for "Bad Request" messages
+      - Copy the full error message
+   
+   B) Test with Python script:
+      .\venv\Scripts\activate
+      python test_serializer.py
+      
+      This will test the serializer directly
+   
+   C) Check Backend Models:
+      python manage.py shell
+      from accounts.models import CustomUser
+      from django.db import connection
+      print(connection.settings_dict)  # Verify connection
+      
+   D) Check if user was created despite error:
+      python manage.py shell
+      from accounts.models import CustomUser
+      users = CustomUser.objects.all()
+      print(f"Total users: {users.count()}")
+
+PASSWORD REQUIREMENTS:
+======================
+Django default password validation requires:
+✓ At least 8 characters
+✓ Should not be completely numeric
+✓ Should not be too common
+✓ Should not match username too closely
+
+GOOD PASSWORDS:
+- MyPassword123
+- SecurePass456
+- Django@2024
+- Interview#Pass123
+
+BAD PASSWORDS:
+- pass (too short)
+- 12345678 (numeric only)
+- admin (too common)
+- testuser123 (too similar to username)
+
+UPDATED REACT SIGNUP FORM SENDS:
+================================
+{
+  "username": "john_smith",
+  "email": "john.smith@example.com",
+  "name": "John Smith",
+  "age": 28,
+  "password": "MyPassword123",
+  "confirm_password": "MyPassword123"
+}
+
+EXPECTED RESPONSE (201 Created):
+================================
+{
+  "id": 1,
+  "username": "john_smith",
+  "email": "john.smith@example.com",
+  "name": "John Smith",
+  "age": 28
+}
+
+IF OUTPUT IN FRONTEND CONSOLE SHOWS:
+====================================
+✓ "Registration successful" → User created in database
+✗ "Password fields didn't match" → Passwords don't match
+✗ Error with password info → Password too weak/doesn't meet requirements
+
+NEXT STEPS:
+===========
+1. Stop frontend/backend servers
+2. Restart Django backend: python manage.py runserver
+3. Try signup again with password: MyPassword123
+4. Check browser console (F12) for errors
+5. Check Django console for error details
+"""
+
+# This is the expected API flow:
+
+# STEP 1: User submits signup form
+# {
+#   "username": "john_smith",
+#   "email": "john.smith@example.com",
+#   "name": "John Smith",
+#   "age": 28,
+#   "password": "MyPassword123",
+#   "confirm_password": "MyPassword123"
+# }
+
+# STEP 2: Backend validates:
+# - Username: not taken, valid format
+# - Email: valid format, not taken
+# - Password: at least 8 chars, not completely numeric
+# - Passwords match
+
+# STEP 3: If valid, create user and return 201
+# STEP 4: If invalid, return 400 with error details
+
+print(__doc__)

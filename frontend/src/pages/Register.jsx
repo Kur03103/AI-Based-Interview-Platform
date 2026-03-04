@@ -20,15 +20,15 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
-      <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 transition-colors duration-300">
-        <div className="flex justify-between items-start">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+      <div className="max-w-2xl w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 transition-colors duration-300">
+        <div className="flex justify-between items-center mb-6">
           <div className="text-center flex-1">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Create Account
+            <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white">
+              Create your account
             </h2>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              Join Interview Bloom today
+            <p className="mt-2 text-base text-gray-600 dark:text-gray-400">
+              Start your journey with Interview Bloom – it only takes a minute.
             </p>
           </div>
           <ThemeToggle />
