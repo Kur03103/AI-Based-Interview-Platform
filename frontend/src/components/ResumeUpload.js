@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import api from "../api/axios";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -27,6 +28,8 @@ export default function ResumeUpload() {
   const [fileName, setFileName] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const [analysis, setAnalysis] = useState(null);
+
+  const navigate = useNavigate();
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -91,6 +94,9 @@ export default function ResumeUpload() {
       );
 
       setAnalysis(response.data);
+      
+      // Automatically save the resume report (don't block UI if it fails)
+      saveResumeReport(response.data, fileName);
     } catch (err) {
       console.error("Analysis error:", err);
       setError(
@@ -100,6 +106,22 @@ export default function ResumeUpload() {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ── Save Resume Report ───────────────────────────────────────────────────
+  const saveResumeReport = async (analysisData, fileName) => {
+    try {
+      const response = await api.post('/api/candidates/reports/save/', {
+        analysis_data: analysisData,
+        file_name: fileName,
+        file_url: '', // Could be populated if file is stored in cloud
+      });
+      console.log("[ResumeUpload] Report saved successfully:", response.data);
+      // Could show a toast notification here if desired
+    } catch (error) {
+      console.error("[ResumeUpload] Failed to save report:", error);
+      // Don't show error to user - analysis is still available
     }
   };
 
@@ -646,6 +668,20 @@ export default function ResumeUpload() {
                   {analysis.improved_bullet_example}
                 </pre>
               </div>
+            </motion.div>
+
+            {/* View History Button */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl shadow-xl border border-purple-200/50 p-6 text-center"
+            >
+              <button
+                onClick={() => navigate('/resume-history')}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              >
+                View Resume History →
+              </button>
             </motion.div>
           </motion.div>
         )}

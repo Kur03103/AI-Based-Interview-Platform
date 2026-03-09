@@ -1,4 +1,5 @@
 from django.db import models
+import uuid
 
 class Person(models.Model):
     first_name = models.CharField(max_length=255, blank=True, null=True)
@@ -40,3 +41,38 @@ class Achievement(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class ResumeReport(models.Model):
+    """
+    Model to store resume analysis reports generated after resume upload and analysis.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey('accounts.CustomUser', on_delete=models.CASCADE, related_name='resume_reports')
+    
+    # File information
+    resume_file_name = models.TextField()  # original uploaded file name
+    resume_file_url = models.TextField(blank=True, null=True)  # if stored in cloud/local storage
+    
+    # Report data
+    overall_score = models.IntegerField()  # 0-100
+    ats_score = models.IntegerField()  # 0-100
+    strengths = models.JSONField()  # array of strings
+    weaknesses = models.JSONField()  # array of strings
+    analytics = models.JSONField()  # { keyword_density, experience_depth, skills_balance }
+    recommendations = models.JSONField()  # array of strings
+    improved_bullet_example = models.TextField()
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Resume Report - {self.user.username} - ATS: {self.ats_score}"
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['ats_score']),
+        ]

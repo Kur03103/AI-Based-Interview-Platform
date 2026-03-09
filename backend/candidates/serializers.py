@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Person, Education, Skill, Achievement
+from .models import Person, Education, Skill, Achievement, ResumeReport
 
 class EducationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -42,3 +42,39 @@ class PersonSerializer(serializers.ModelSerializer):
             Achievement.objects.create(person=person, **achieve_item)
 
         return person
+
+
+class ResumeReportSerializer(serializers.ModelSerializer):
+    """
+    Serializer for ResumeReport model.
+    """
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    username = serializers.CharField(source='user.username', read_only=True)
+    email = serializers.CharField(source='user.email', read_only=True)
+    
+    class Meta:
+        model = ResumeReport
+        fields = [
+            'id',
+            'user',
+            'username',
+            'email',
+            'resume_file_name',
+            'resume_file_url',
+            'overall_score',
+            'ats_score',
+            'strengths',
+            'weaknesses',
+            'analytics',
+            'recommendations',
+            'improved_bullet_example',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = [
+            'id',
+            'username',
+            'email',
+            'created_at',
+            'updated_at',
+        ]

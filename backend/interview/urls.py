@@ -6,6 +6,8 @@ from .views import (
     InterviewSignupCreateView,
     InterviewSignupDetailView,
     InterviewSignupListView,
+    InterviewReportSaveView,
+    InterviewReportListView,
 )
 
 urlpatterns = [
@@ -18,4 +20,8 @@ urlpatterns = [
     path('', InterviewView.as_view(), name='interview'),
     path('stt/', SpeechToTextView.as_view(), name='interview-stt'),
     path('analyze/', AnalyzeInterviewView.as_view(), name='interview-analyze'),
+    
+    # Interview reports endpoints
+    path('reports/save/', InterviewReportSaveView.as_view(), name='interview-report-save'),
+    path('reports/', InterviewReportListView.as_view(), name='interview-report-list'),
 ]

@@ -2,8 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, generics, permissions
 from django.conf import settings
-from .models import InterviewSession, InterviewSignup
-from .serializers import InterviewSignupSerializer, InterviewSessionSerializer
+from .models import InterviewSession, InterviewSignup, InterviewReport
+from .serializers import InterviewSignupSerializer, InterviewSessionSerializer, InterviewReportSerializer
 from accounts.models import CustomUser
 import requests
 import json
@@ -483,3 +483,28 @@ def _fallback_analysis(conversation, interview_type, duration, session_id):
         "question_count": len(ai_turns),
         "response_count": len(user_turns),
     }
+
+
+class InterviewReportSaveView(generics.CreateAPIView):
+    """
+    API endpoint to save interview reports.
+    Accepts full interview report object and saves it linked to the authenticated user.
+    """
+    serializer_class = InterviewReportSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class InterviewReportListView(generics.ListAPIView):
+    """
+    API endpoint to get all interview reports for the authenticated user.
+    Returns reports ordered by created_at DESC with pagination support.
+    """
+    serializer_class = InterviewReportSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None  # Disable pagination for now, can add later
+    
+    def get_queryset(self):
+        return InterviewReport.objects.filter(user=self.request.user).order_by('-created_at')

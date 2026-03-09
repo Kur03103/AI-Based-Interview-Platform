@@ -2,15 +2,16 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.db import transaction
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import os
-from .serializers import PersonSerializer
+from .serializers import PersonSerializer, ResumeReportSerializer
 from .ocr_service import MistralOCRService
+from .models import ResumeReport
 
 class SaveCVView(APIView):
     def post(self, request):
@@ -312,6 +313,110 @@ class ResumeQualityView(APIView):
         except Exception as e:
             return Response({
                 "error": "Failed to analyze resume quality",
+                "details": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ResumeReportSaveView(APIView):
+    """
+    API endpoint to save resume analysis reports.
+    Accepts full resume analysis object and saves it linked to the authenticated user.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        try:
+            # Get the analysis data from request
+            analysis_data = request.data.get('analysis_data', {})
+            file_name = request.data.get('file_name', '')
+            file_url = request.data.get('file_url', '')
+            
+            if not analysis_data:
+                return Response({
+                    "error": "analysis_data is required"
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Validate required fields
+            required_fields = ['overall_score', 'ats_score', 'strengths', 'weaknesses', 'recommendations', 'improved_bullet_example']
+            for field in required_fields:
+                if field not in analysis_data:
+                    return Response({
+                        "error": f"Missing required field: {field}"
+                    }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Create the report
+            report_data = {
+                'resume_file_name': file_name,
+                'resume_file_url': file_url,
+                'overall_score': analysis_data['overall_score'],
+                'ats_score': analysis_data['ats_score'],
+                'strengths': analysis_data['strengths'],
+                'weaknesses': analysis_data['weaknesses'],
+                'analytics': analysis_data.get('analytics', {}),
+                'recommendations': analysis_data['recommendations'],
+                'improved_bullet_example': analysis_data['improved_bullet_example'],
+            }
+            
+            serializer = ResumeReportSerializer(data=report_data, context={'request': request})
+            if serializer.is_valid():
+                report = serializer.save()
+                return Response({
+                    "message": "Resume report saved successfully",
+                    "report_id": str(report.id)
+                }, status=status.HTTP_201_CREATED)
+            else:
+                return Response({
+                    "error": "Invalid data",
+                    "details": serializer.errors
+                }, status=status.HTTP_400_BAD_REQUEST)
+                
+        except Exception as e:
+            return Response({
+                "error": "Failed to save resume report",
+                "details": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ResumeReportListView(APIView):
+    """
+    API endpoint to get all resume reports for the authenticated user.
+    Returns reports ordered by created_at DESC with pagination support.
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        try:
+            # Get query parameters for pagination
+            page = int(request.query_params.get('page', 1))
+            limit = int(request.query_params.get('limit', 10))
+            
+            # Calculate offset
+            offset = (page - 1) * limit
+            
+            # Get reports for the user
+            reports = ResumeReport.objects.filter(user=request.user).order_by('-created_at')[offset:offset + limit]
+            
+            # Get total count for pagination info
+            total_count = ResumeReport.objects.filter(user=request.user).count()
+            
+            # Serialize the data
+            serializer = ResumeReportSerializer(reports, many=True, context={'request': request})
+            
+            # Calculate next page indicator
+            current_offset = offset + limit
+            has_next = current_offset < total_count
+            next_page = f"page={page + 1}&limit={limit}" if has_next else None
+            
+            return Response({
+                "results": serializer.data,
+                "next": next_page,
+                "previous": f"page={page - 1}&limit={limit}" if page > 1 else None,
+                "count": total_count
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({
+                "error": "Failed to fetch resume reports",
                 "details": str(e)
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

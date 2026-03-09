@@ -12,6 +12,8 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
 import Interview from "./pages/Interview";
+import InterviewHistory from "./pages/InterviewHistory";
+import ResumeHistory from "./pages/ResumeHistory";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminPanel from "./pages/AdminPanel";
 
@@ -31,6 +33,8 @@ function App() {
             <Route element={<ProtectedRoute />}> 
               <Route path="/home" element={<Dashboard />} />
               <Route path="/interview" element={<Interview />} />
+              <Route path="/interview-history" element={<InterviewHistory />} />
+              <Route path="/resume-history" element={<ResumeHistory />} />
               <Route path="/admin" element={<AdminPanel />} />
             </Route>
 

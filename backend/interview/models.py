@@ -1,4 +1,5 @@
 from django.db import models
+import uuid
 from accounts.models import CustomUser
 
 class InterviewSession(models.Model):
@@ -60,4 +61,37 @@ class InterviewSignup(models.Model):
         indexes = [
             models.Index(fields=['user', 'created_at']),
             models.Index(fields=['is_completed']),
+        ]
+
+
+class InterviewReport(models.Model):
+    """
+    Model to store interview analysis reports generated after interview completion.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='interview_reports')
+    
+    # Report data
+    overall_score = models.IntegerField()  # 0-100
+    duration = models.IntegerField()  # minutes
+    question_count = models.IntegerField()
+    response_count = models.IntegerField()
+    tone_analysis = models.JSONField()  # { dominant_tone, confidence_score, sentiment, tone_tags[] }
+    skill_scores = models.JSONField()  # { communication, response_quality, engagement, technical_depth/empathy_and_self_awareness }
+    strengths = models.JSONField()  # array of strings
+    improvements = models.JSONField()  # array of strings
+    detailed_feedback = models.TextField()
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Interview Report - {self.user.username} - Score: {self.overall_score}"
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['overall_score']),
         ]

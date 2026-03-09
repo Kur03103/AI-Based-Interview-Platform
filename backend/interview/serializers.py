@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import InterviewSignup, InterviewSession
+from .models import InterviewSignup, InterviewSession, InterviewReport
 from accounts.serializers import UserSerializer
 
 
@@ -48,4 +48,35 @@ class InterviewSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = InterviewSession
         fields = ['id', 'session_id', 'history', 'created_at']
+
+
+class InterviewReportSerializer(serializers.ModelSerializer):
+    """
+    Serializer for InterviewReport model.
+    """
+    user = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = InterviewReport
+        fields = [
+            'id',
+            'user',
+            'overall_score',
+            'duration',
+            'question_count',
+            'response_count',
+            'tone_analysis',
+            'skill_scores',
+            'strengths',
+            'improvements',
+            'detailed_feedback',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = [
+            'id',
+            'user',
+            'created_at',
+            'updated_at',
+        ]
         read_only_fields = ['id', 'created_at']

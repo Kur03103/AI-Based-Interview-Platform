@@ -5,7 +5,9 @@ from .views import (
     HealthCheckView, 
     ResumeAnalysisView,
     JobRecommendationsView,
-    ResumeQualityView
+    ResumeQualityView,
+    ResumeReportSaveView,
+    ResumeReportListView,
 )
 
 urlpatterns = [
@@ -15,4 +17,8 @@ urlpatterns = [
     path('health/', HealthCheckView.as_view(), name='health_check'),
     path('recommendations/', JobRecommendationsView.as_view(), name='job_recommendations'),
     path('quality/', ResumeQualityView.as_view(), name='resume_quality'),
+    
+    # Resume reports endpoints
+    path('reports/save/', ResumeReportSaveView.as_view(), name='resume-report-save'),
+    path('reports/', ResumeReportListView.as_view(), name='resume-report-list'),
 ]

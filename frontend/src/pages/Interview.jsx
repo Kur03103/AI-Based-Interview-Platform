@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "../components/ThemeToggle";
+import api from "../api/axios";
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
 
@@ -389,10 +390,25 @@ const Interview = () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setAnalysisData(data);
+      
+      // Automatically save the report (don't block UI if it fails)
+      saveInterviewReport(data);
     } catch (err) {
       console.error("[Interview] Analysis fetch error:", err);
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  // ── Save Interview Report ────────────────────────────────────────────────
+  const saveInterviewReport = async (reportData) => {
+    try {
+      const response = await api.post('/interview/reports/save/', reportData);
+      console.log("[Interview] Report saved successfully:", response.data);
+      // Could show a toast notification here if desired
+    } catch (error) {
+      console.error("[Interview] Failed to save report:", error);
+      // Don't show error to user - report is still available for download
     }
   };
 
@@ -2089,6 +2105,12 @@ const Interview = () => {
                     />
                   </svg>
                   Download Report
+                </button>
+                <button
+                  onClick={() => navigate("/interview-history")}
+                  className="flex-1 px-5 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-medium text-white border border-white/20 transition-all duration-300 text-sm"
+                >
+                  View History
                 </button>
                 <button
                   onClick={() => navigate("/home")}
