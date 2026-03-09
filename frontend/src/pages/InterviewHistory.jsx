@@ -16,7 +16,7 @@ const InterviewHistory = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/interview/reports/');
+      const response = await api.get('/api/interview/reports/');
       setReports(response.data);
     } catch (err) {
       console.error("Failed to fetch interview reports:", err);

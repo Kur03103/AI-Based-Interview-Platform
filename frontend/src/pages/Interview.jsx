@@ -403,7 +403,7 @@ const Interview = () => {
   // ── Save Interview Report ────────────────────────────────────────────────
   const saveInterviewReport = async (reportData) => {
     try {
-      const response = await api.post('/interview/reports/save/', reportData);
+      const response = await api.post('/api/interview/reports/save/', reportData);
       console.log("[Interview] Report saved successfully:", response.data);
       // Could show a toast notification here if desired
     } catch (error) {
