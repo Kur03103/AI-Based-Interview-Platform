@@ -131,10 +131,6 @@ function StatCard({ label, value, sub, gradient, icon, index }) {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   SECTION VIEWS
-───────────────────────────────────────────────────────────── */
-
 function Overview({ users = [], interviews = [], resumes = [] }) {
   const totalInterviews = interviews.length;
   const resumesAnalyzed = resumes.length;
