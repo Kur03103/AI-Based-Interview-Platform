@@ -109,7 +109,6 @@ export default function ResumeUpload() {
     }
   };
 
-  // ── Save Resume Report ───────────────────────────────────────────────────
   const saveResumeReport = async (analysisData, fileName) => {
     try {
       const response = await api.post('/api/candidates/reports/save/', {
