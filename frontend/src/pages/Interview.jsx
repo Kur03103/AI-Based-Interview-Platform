@@ -36,7 +36,7 @@ const Interview = () => {
   const isMutedRef = useRef(false);
   const isProcessingRef = useRef(false);
   const chatEndRef = useRef(null);
-  const mediaStreamRef = useRef(null); // Keep mic stream alive for macOS indicator
+  const mediaStreamRef = useRef(null); // Keep mic stream alive for permission and recording
   const mediaRecorderRef = useRef(null); // Records audio to send to backend STT
   const audioChunksRef = useRef([]);
   const recordingTimeoutRef = useRef(null);

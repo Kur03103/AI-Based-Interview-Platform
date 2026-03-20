@@ -20,7 +20,18 @@ class LogoutView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
 
     def post(self, request):
-        # In a stateless JWT system, backend logout isn't strictly necessary 
+        # In a stateless JWT system, backend logout isn't strictly necessary
         # unless using token blacklisting.
         # Frontend should remove the token.
         return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
+
+class AdminUserListView(generics.ListAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
+    # allow all authenticated users to list users, not just superusers
+    permission_classes = [permissions.IsAuthenticated]
+
+class AdminUserDetailView(generics.RetrieveUpdateAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAdminUser]

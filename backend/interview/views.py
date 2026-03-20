@@ -499,12 +499,24 @@ class InterviewReportSaveView(generics.CreateAPIView):
 
 class InterviewReportListView(generics.ListAPIView):
     """
-    API endpoint to get all interview reports for the authenticated user.
-    Returns reports ordered by created_at DESC with pagination support.
+    API endpoint to get interview reports.
+    Admin users can see all reports or filter by user.
+    Regular users can only see their own reports.
     """
     serializer_class = InterviewReportSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = None  # Disable pagination for now, can add later
-    
+
     def get_queryset(self):
-        return InterviewReport.objects.filter(user=self.request.user).order_by('-created_at')
+        user = self.request.user
+        queryset = InterviewReport.objects.all()
+
+        # Allow filtering by user_id for admin users
+        user_id = self.request.query_params.get('user')
+        if user_id and user.is_staff:
+            queryset = queryset.filter(user_id=user_id)
+        elif not user.is_staff:
+            # Non-admin users can only see their own reports
+            queryset = queryset.filter(user=user)
+
+        return queryset.order_by('-created_at')

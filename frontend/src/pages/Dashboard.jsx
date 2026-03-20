@@ -5,6 +5,7 @@ import StartInterview from "../sections/StartInterview";
 import Recommendations from "../sections/Recommendations";
 import About from "../sections/About";
 import ResumeUpload from "../components/ResumeUpload";
+import AdminPanel from "../components/AdminPanel";
 import ThemeToggle from "../components/ThemeToggle";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -59,6 +60,7 @@ const GlassNavbar = ({
   userMenuOpen,
   setUserMenuOpen,
   navigate,
+  isAdmin,
 }) => {
   const [scrolled, setScrolled] = useState(false);
 
@@ -107,10 +109,15 @@ const GlassNavbar = ({
       icon: "M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z",
     },
     {
+      id: "about",
+      label: "About",
+      icon: "M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z",
+    },
+    ...(isAdmin ? [{
       id: "admin",
       label: "Admin",
       icon: "M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V18zm0 2.25h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5v-.008zm2.25-2.25h.008v.008H18.75V18zm2.25 0h.008v.008H21V18zm-2.25 2.25h.008v.008H18.75v-.008zm2.25 0h.008v.008H21v-.008z",
-    },
+    }] : []),
   ];
 
   return (
@@ -528,6 +535,49 @@ const Dashboard = () => {
       case "about":
         content = <About />;
         break;
+      case "admin":
+        content = (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-7xl mx-auto"
+          >
+            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-gray-700/50 p-8">
+              <div className="text-center mb-8">
+                <motion.div
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center shadow-lg shadow-red-500/30"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-10 h-10 text-white"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V18zm0 2.25h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5v-.008zm2.25-2.25h.008v.008H18.75V18zm2.25 0h.008v.008H21V18zm-2.25 2.25h.008v.008H18.75v-.008zm2.25 0h.008v.008H21v-.008z"
+                    />
+                  </svg>
+                </motion.div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                  Admin Dashboard
+                </h1>
+                <p className="text-gray-600 dark:text-gray-300">
+                  Manage users and view analysis reports
+                </p>
+              </div>
+
+              <AdminPanel />
+            </div>
+          </motion.div>
+        );
+        break;
       default:
         content = (
           <DashboardHome
@@ -563,6 +613,7 @@ const Dashboard = () => {
         userMenuOpen={userMenuOpen}
         setUserMenuOpen={setUserMenuOpen}
         navigate={navigate}
+        isAdmin={auth.user?.is_staff || auth.user?.is_superuser}
       />
 
       {/* Main Content Container */}

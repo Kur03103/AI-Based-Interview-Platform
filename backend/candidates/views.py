@@ -379,41 +379,54 @@ class ResumeReportSaveView(APIView):
 
 class ResumeReportListView(APIView):
     """
-    API endpoint to get all resume reports for the authenticated user.
-    Returns reports ordered by created_at DESC with pagination support.
+    API endpoint to get resume reports.
+    Admin users can see all reports or filter by user.
+    Regular users can only see their own reports.
     """
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
         try:
             # Get query parameters for pagination
             page = int(request.query_params.get('page', 1))
             limit = int(request.query_params.get('limit', 10))
-            
+
             # Calculate offset
             offset = (page - 1) * limit
-            
-            # Get reports for the user
-            reports = ResumeReport.objects.filter(user=request.user).order_by('-created_at')[offset:offset + limit]
-            
+
+            # Build queryset based on user permissions
+            user = request.user
+            queryset = ResumeReport.objects.all()
+
+            # Allow filtering by user_id for admin users
+            user_id = request.query_params.get('user')
+            if user_id and user.is_staff:
+                queryset = queryset.filter(user_id=user_id)
+            elif not user.is_staff:
+                # Non-admin users can only see their own reports
+                queryset = queryset.filter(user=user)
+
+            # Get reports
+            reports = queryset.order_by('-created_at')[offset:offset + limit]
+
             # Get total count for pagination info
-            total_count = ResumeReport.objects.filter(user=request.user).count()
-            
+            total_count = queryset.count()
+
             # Serialize the data
             serializer = ResumeReportSerializer(reports, many=True, context={'request': request})
-            
+
             # Calculate next page indicator
             current_offset = offset + limit
             has_next = current_offset < total_count
             next_page = f"page={page + 1}&limit={limit}" if has_next else None
-            
+
             return Response({
                 "results": serializer.data,
                 "next": next_page,
                 "previous": f"page={page - 1}&limit={limit}" if page > 1 else None,
                 "count": total_count
             }, status=status.HTTP_200_OK)
-            
+
         except Exception as e:
             return Response({
                 "error": "Failed to fetch resume reports",

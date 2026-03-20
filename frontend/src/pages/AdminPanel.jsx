@@ -1,259 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
 
 /* ─────────────────────────────────────────────────────────────
-   MOCK DATA
+   ADMIN PANEL DATA
 ───────────────────────────────────────────────────────────── */
-const MOCK_USERS = [
-  {
-    id: 1,
-    name: "Aarav Sharma",
-    email: "aarav@example.com",
-    role: "Candidate",
-    interviews: 5,
-    joined: "Jan 12, 2026",
-    status: "active",
-  },
-  {
-    id: 2,
-    name: "Priya Nair",
-    email: "priya@example.com",
-    role: "Candidate",
-    interviews: 3,
-    joined: "Jan 19, 2026",
-    status: "active",
-  },
-  {
-    id: 3,
-    name: "James Carter",
-    email: "james@example.com",
-    role: "Recruiter",
-    interviews: 0,
-    joined: "Feb 3, 2026",
-    status: "active",
-  },
-  {
-    id: 4,
-    name: "Lena Fischer",
-    email: "lena@example.com",
-    role: "Candidate",
-    interviews: 8,
-    joined: "Jan 5, 2026",
-    status: "inactive",
-  },
-  {
-    id: 5,
-    name: "Dev Patel",
-    email: "dev@example.com",
-    role: "Candidate",
-    interviews: 2,
-    joined: "Feb 14, 2026",
-    status: "active",
-  },
-  {
-    id: 6,
-    name: "Sara Müller",
-    email: "sara@example.com",
-    role: "Recruiter",
-    interviews: 0,
-    joined: "Feb 20, 2026",
-    status: "active",
-  },
-  {
-    id: 7,
-    name: "Chris Wong",
-    email: "chris@example.com",
-    role: "Candidate",
-    interviews: 11,
-    joined: "Dec 28, 2025",
-    status: "active",
-  },
-  {
-    id: 8,
-    name: "Fatima Al-Said",
-    email: "fatima@example.com",
-    role: "Candidate",
-    interviews: 1,
-    joined: "Feb 25, 2026",
-    status: "pending",
-  },
-];
 
-const MOCK_INTERVIEWS = [
-  {
-    id: "INT-001",
-    user: "Aarav Sharma",
-    type: "Technical",
-    score: 87,
-    duration: "18 min",
-    date: "Feb 28, 2026",
-    status: "completed",
-  },
-  {
-    id: "INT-002",
-    user: "Priya Nair",
-    type: "Behavioral",
-    score: 74,
-    duration: "22 min",
-    date: "Feb 27, 2026",
-    status: "completed",
-  },
-  {
-    id: "INT-003",
-    user: "Chris Wong",
-    type: "Technical",
-    score: 92,
-    duration: "31 min",
-    date: "Feb 27, 2026",
-    status: "completed",
-  },
-  {
-    id: "INT-004",
-    user: "Dev Patel",
-    type: "Leadership",
-    score: 68,
-    duration: "15 min",
-    date: "Feb 26, 2026",
-    status: "completed",
-  },
-  {
-    id: "INT-005",
-    user: "Fatima Al-Said",
-    type: "Behavioral",
-    score: 55,
-    duration: "12 min",
-    date: "Feb 25, 2026",
-    status: "completed",
-  },
-  {
-    id: "INT-006",
-    user: "Lena Fischer",
-    type: "Technical",
-    score: 95,
-    duration: "28 min",
-    date: "Feb 24, 2026",
-    status: "completed",
-  },
-  {
-    id: "INT-007",
-    user: "Aarav Sharma",
-    type: "Leadership",
-    score: 80,
-    duration: "20 min",
-    date: "Feb 23, 2026",
-    status: "completed",
-  },
-];
 
-const MOCK_RESUMES = [
-  {
-    id: "RES-001",
-    user: "Aarav Sharma",
-    file: "aarav_resume_v3.pdf",
-    ats: 88,
-    size: "245 KB",
-    uploaded: "Feb 26, 2026",
-    status: "analyzed",
-  },
-  {
-    id: "RES-002",
-    user: "Priya Nair",
-    file: "priya_cv_2026.pdf",
-    ats: 72,
-    size: "189 KB",
-    uploaded: "Feb 25, 2026",
-    status: "analyzed",
-  },
-  {
-    id: "RES-003",
-    user: "Lena Fischer",
-    file: "lena_resume.pdf",
-    ats: 91,
-    size: "312 KB",
-    uploaded: "Feb 22, 2026",
-    status: "analyzed",
-  },
-  {
-    id: "RES-004",
-    user: "Dev Patel",
-    file: "dev_patel_resume.pdf",
-    ats: 64,
-    size: "201 KB",
-    uploaded: "Feb 20, 2026",
-    status: "analyzed",
-  },
-  {
-    id: "RES-005",
-    user: "fatima_cv.docx",
-    file: "fatima_cv.docx",
-    ats: null,
-    size: "156 KB",
-    uploaded: "Feb 25, 2026",
-    status: "pending",
-  },
-];
-
-const ACTIVITY = [
-  {
-    icon: "👤",
-    text: "Fatima Al-Said registered",
-    time: "2 hours ago",
-    color: "bg-blue-100 text-blue-600",
-  },
-  {
-    icon: "🎤",
-    text: "Chris Wong completed interview",
-    time: "3 hours ago",
-    color: "bg-emerald-100 text-emerald-600",
-  },
-  {
-    icon: "📄",
-    text: "Priya Nair uploaded a resume",
-    time: "5 hours ago",
-    color: "bg-purple-100 text-purple-600",
-  },
-  {
-    icon: "🎤",
-    text: "Dev Patel started interview",
-    time: "6 hours ago",
-    color: "bg-indigo-100 text-indigo-600",
-  },
-  {
-    icon: "⭐",
-    text: "Lena Fischer scored 95/100",
-    time: "Yesterday",
-    color: "bg-amber-100 text-amber-600",
-  },
-  {
-    icon: "👤",
-    text: "Sara Müller joined as recruiter",
-    time: "Yesterday",
-    color: "bg-pink-100 text-pink-600",
-  },
-];
-
-const WEEKLY_INTERVIEWS = [
-  { day: "Mon", count: 3 },
-  { day: "Tue", count: 7 },
-  { day: "Wed", count: 5 },
-  { day: "Thu", count: 9 },
-  { day: "Fri", count: 6 },
-  { day: "Sat", count: 2 },
-  { day: "Sun", count: 4 },
-];
-
-const SCORE_DIST = [
-  { label: "90–100", count: 4, color: "from-emerald-500 to-green-400" },
-  { label: "75–89", count: 9, color: "from-blue-500 to-indigo-400" },
-  { label: "60–74", count: 6, color: "from-amber-500 to-yellow-400" },
-  { label: "< 60", count: 3, color: "from-red-500 to-pink-400" },
-];
 
 /* ─────────────────────────────────────────────────────────────
    HELPERS
 ───────────────────────────────────────────────────────────── */
-const maxCount = Math.max(...WEEKLY_INTERVIEWS.map((d) => d.count));
 
 function ScoreBadge({ score }) {
   if (score === null) return <span className="text-xs text-gray-400">—</span>;
@@ -377,32 +135,65 @@ function StatCard({ label, value, sub, gradient, icon, index }) {
    SECTION VIEWS
 ───────────────────────────────────────────────────────────── */
 
-function Overview() {
+function Overview({ users = [], interviews = [], resumes = [] }) {
+  const totalInterviews = interviews.length;
+  const resumesAnalyzed = resumes.length;
+
+  const avgInterviewScore = totalInterviews
+    ? Math.round(interviews.reduce((sum, r) => sum + (r.overall_score || 0), 0) / totalInterviews)
+    : 0;
+
+  const scoreBands = [
+    { label: "90–100", count: interviews.filter((i) => (i.overall_score || 0) >= 90).length, color: "from-emerald-500 to-green-400" },
+    { label: "75–89", count: interviews.filter((i) => (i.overall_score || 0) >= 75 && (i.overall_score || 0) < 90).length, color: "from-blue-500 to-indigo-400" },
+    { label: "60–74", count: interviews.filter((i) => (i.overall_score || 0) >= 60 && (i.overall_score || 0) < 75).length, color: "from-amber-500 to-yellow-400" },
+    { label: "< 60", count: interviews.filter((i) => (i.overall_score || 0) < 60).length, color: "from-red-500 to-pink-400" },
+  ];
+
+  const activity = [
+    ...interviews.map((inv) => ({
+      icon: "🎤",
+      text: `${inv.user?.username || inv.username || "Unknown"} completed interview`,
+      sub: `${inv.overall_score || 0}% score`,
+      date: inv.updated_at || inv.created_at,
+    })),
+    ...resumes.map((res) => ({
+      icon: "📄",
+      text: `${res.username || res.email || "Unknown"} uploaded resume`,
+      sub: `ATS ${res.ats_score ?? "N/A"}`,
+      date: res.updated_at || res.created_at,
+    })),
+  ]
+    .filter((a) => a.date)
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 6);
+
+
   const stats = [
     {
       label: "Total Users",
-      value: "8",
-      sub: "+2 this week",
+      value: String(users.length),
+      sub: "Live users",
       gradient: "from-blue-500 to-indigo-600",
       icon: "M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z",
     },
     {
       label: "Total Interviews",
-      value: "22",
+      value: String(totalInterviews),
       sub: "+7 this week",
       gradient: "from-purple-500 to-violet-600",
       icon: "M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z",
     },
     {
       label: "Resumes Analyzed",
-      value: "14",
+      value: String(resumesAnalyzed),
       sub: "+3 this week",
       gradient: "from-emerald-500 to-teal-600",
       icon: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z",
     },
     {
       label: "Avg Score",
-      value: "78%",
+      value: `${avgInterviewScore}%`,
       sub: "Across all sessions",
       gradient: "from-pink-500 to-rose-600",
       icon: "M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z",
@@ -419,45 +210,6 @@ function Overview() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Weekly bar chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.35 }}
-          className="lg:col-span-2 bg-white/70 backdrop-blur-xl rounded-2xl border border-white/60 p-6 shadow-lg"
-        >
-          <h3 className="font-bold text-gray-900 text-lg mb-6">
-            Interviews This Week
-          </h3>
-          <div className="flex items-end gap-3 h-44">
-            {WEEKLY_INTERVIEWS.map((d, i) => (
-              <div
-                key={d.day}
-                className="flex-1 flex flex-col items-center gap-2"
-              >
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: `${(d.count / maxCount) * 100}%` }}
-                  transition={{
-                    duration: 0.6,
-                    delay: i * 0.07,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                  className="w-full rounded-xl bg-gradient-to-t from-indigo-600 to-purple-500 shadow-md shadow-indigo-300/30 relative group cursor-pointer"
-                  style={{ minHeight: "8px" }}
-                >
-                  <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-xs font-bold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {d.count}
-                  </span>
-                </motion.div>
-                <span className="text-xs font-semibold text-gray-400">
-                  {d.day}
-                </span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
         {/* Activity feed */}
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -469,7 +221,7 @@ function Overview() {
             Recent Activity
           </h3>
           <div className="space-y-3">
-            {ACTIVITY.map((a, i) => (
+            {activity.map((a, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, x: 16 }}
@@ -477,16 +229,14 @@ function Overview() {
                 transition={{ delay: 0.5 + i * 0.06 }}
                 className="flex items-start gap-3"
               >
-                <span
-                  className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-sm ${a.color}`}
-                >
+                <span className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-sm bg-indigo-100 text-indigo-700">
                   {a.icon}
                 </span>
                 <div>
                   <p className="text-xs font-semibold text-gray-800 leading-tight">
                     {a.text}
                   </p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">{a.time}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">{a.date ? new Date(a.date).toLocaleString() : 'Unknown'}</p>
                 </div>
               </motion.div>
             ))}
@@ -505,7 +255,7 @@ function Overview() {
           Score Distribution
         </h3>
         <div className="space-y-4">
-          {SCORE_DIST.map((band, i) => (
+          {scoreBands.map((band, i) => (
             <div key={band.label} className="flex items-center gap-4">
               <span className="text-sm font-semibold text-gray-600 w-16 text-right">
                 {band.label}
@@ -513,7 +263,7 @@ function Overview() {
               <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
-                  animate={{ width: `${(band.count / 22) * 100}%` }}
+                  animate={{ width: `${(totalInterviews > 0 ? (band.count / totalInterviews) * 100 : 0)}%` }}
                   transition={{
                     duration: 0.7,
                     delay: 0.6 + i * 0.1,
@@ -533,13 +283,24 @@ function Overview() {
   );
 }
 
-function Users() {
+function Users({ users = [], loading = false, error = '', formatDate, onUserRemoved }) {
   const [search, setSearch] = useState("");
-  const filtered = MOCK_USERS.filter(
+  const filtered = users.filter(
     (u) =>
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase()),
+      (u.username || "").toLowerCase().includes(search.toLowerCase()) ||
+      (u.email || "").toLowerCase().includes(search.toLowerCase()),
   );
+
+  const deleteUser = async (id) => {
+    if (!window.confirm('Delete this user?')) return;
+    try {
+      await api.delete(`/api/auth/admin/users/${id}/`);
+      onUserRemoved?.(id);
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      alert('Could not delete user. Ensure you have permission and the user is not protected.');
+    }
+  };
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-4">
@@ -592,21 +353,21 @@ function Users() {
         transition={{ duration: 0.4 }}
         className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/60 shadow-lg overflow-hidden"
       >
+        <div className="p-4 text-sm text-gray-500">
+          {loading ? (
+            "Loading users..."
+          ) : error ? (
+            <span className="text-red-500">{error}</span>
+          ) : filtered.length === 0 ? (
+            "No users found."
+          ) : null}
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-100">
                 <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
                   User
-                </th>
-                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                  Role
-                </th>
-                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                  Interviews
-                </th>
-                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                  Joined
                 </th>
                 <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
                   Status
@@ -628,31 +389,18 @@ function Users() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                        {u.name.charAt(0)}
+                        {(u.username || 'U').charAt(0).toUpperCase()}
                       </div>
                       <div>
                         <p className="text-sm font-bold text-gray-900">
-                          {u.name}
+                          {u.username || 'Unknown'}
                         </p>
-                        <p className="text-xs text-gray-400">{u.email}</p>
+                        <p className="text-xs text-gray-400">{u.email || 'No email'}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className={`text-xs font-semibold px-2.5 py-1 rounded-full ${u.role === "Recruiter" ? "bg-purple-100 text-purple-700" : "bg-indigo-100 text-indigo-700"}`}
-                    >
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-700">
-                    {u.interviews}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {u.joined}
-                  </td>
-                  <td className="px-6 py-4">
-                    <StatusPill status={u.status} />
+                    <StatusPill status={u.is_active ? 'active' : 'inactive'} />
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
@@ -671,7 +419,11 @@ function Users() {
                           />
                         </svg>
                       </button>
-                      <button className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition-colors">
+                      <button
+                        onClick={() => deleteUser(u.id)}
+                        className="w-7 h-7 rounded-lg bg-gray-100 hover:bg-red-100 hover:text-red-500 flex items-center justify-center transition-colors"
+                        title="Delete user"
+                      >
                         <svg
                           className="w-3.5 h-3.5"
                           fill="none"
@@ -698,7 +450,9 @@ function Users() {
   );
 }
 
-function Interviews() {
+function Interviews({ interviews = [], loading = false, error = '', formatDate, chooseInterviewType }) {
+  const [selectedReport, setSelectedReport] = useState(null);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -711,91 +465,133 @@ function Interviews() {
           All Interview Sessions
         </h3>
         <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
-          {MOCK_INTERVIEWS.length} total
+          {loading ? 'Loading...' : `${interviews.length} total`}
         </span>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-50">
-              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                ID
-              </th>
-              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                Candidate
-              </th>
-              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                Type
-              </th>
-              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                Score
-              </th>
-              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                Duration
-              </th>
-              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                Date
-              </th>
-              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {MOCK_INTERVIEWS.map((s, i) => (
-              <motion.tr
-                key={s.id}
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.06 }}
-                className="hover:bg-indigo-50/40 transition-colors"
-              >
-                <td className="px-6 py-4 text-xs font-mono font-bold text-indigo-600">
-                  {s.id}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs">
-                      {s.user.charAt(0)}
+
+      {loading ? (
+        <div className="px-6 py-8 text-gray-500">Loading interview history...</div>
+      ) : error ? (
+        <div className="px-6 py-8 text-red-500">{error}</div>
+      ) : interviews.length === 0 ? (
+        <div className="px-6 py-8 text-gray-500">No interview history available.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-50">
+                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">ID</th>
+                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">Candidate</th>
+                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">Type</th>
+                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">Score</th>
+                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">Duration</th>
+                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">Date</th>
+                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {interviews.map((s, i) => (
+                <motion.tr
+                  key={s.id}
+                  onClick={() => setSelectedReport(s)}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className={`hover:bg-indigo-50/40 transition-colors ${selectedReport?.id === s.id ? 'bg-indigo-100/40' : ''}`}
+                >
+                  <td className="px-6 py-4 text-xs font-mono font-bold text-indigo-600">{(s.id || '').toString().slice(0, 8)}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs">
+                        {(s.user?.username || 'U').charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-sm font-semibold text-gray-800">{s.user?.username || 'Unknown'}</span>
                     </div>
-                    <span className="text-sm font-semibold text-gray-800">
-                      {s.user}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                      chooseInterviewType(s) === 'Technical'
+                        ? 'bg-blue-100 text-blue-700'
+                        : chooseInterviewType(s) === 'Behavioral'
+                          ? 'bg-purple-100 text-purple-700'
+                          : 'bg-amber-100 text-amber-700'
+                    }`}>
+                      {chooseInterviewType(s)}
                     </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
-                      s.type === "Technical"
-                        ? "bg-blue-100 text-blue-700"
-                        : s.type === "Behavioral"
-                          ? "bg-purple-100 text-purple-700"
-                          : "bg-amber-100 text-amber-700"
-                    }`}
-                  >
-                    {s.type}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <ScoreBadge score={s.score} />
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {s.duration}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-500">{s.date}</td>
-                <td className="px-6 py-4">
-                  <StatusPill status={s.status} />
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <ScoreBadge score={s.overall_score || 0} />
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{s.duration ? `${s.duration} min` : 'N/A'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{formatDate(s.created_at || s.updated_at)}</td>
+                  <td className="px-6 py-4">
+                    <StatusPill status={s.overall_score >= 70 ? 'completed' : 'needs review'} />
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {selectedReport && (
+          <div className="p-5 border-t border-gray-200 bg-gray-50">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <h4 className="text-lg font-bold text-gray-900">Interview Detail</h4>
+                <p className="text-sm text-gray-500">{selectedReport.user?.username || 'Unknown candidate'}</p>
+              </div>
+              <button
+                onClick={() => setSelectedReport(null)}
+                className="text-xs px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+              >
+                Close
+              </button>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <p className="text-xs text-gray-400">Date</p>
+                <p className="font-semibold">{formatDate(selectedReport.created_at || selectedReport.updated_at)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Duration</p>
+                <p className="font-semibold">{selectedReport.duration ? `${selectedReport.duration} min` : 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Score</p>
+                <p className="font-semibold">{selectedReport.overall_score || 0}%</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Status</p>
+                <StatusPill status={selectedReport.overall_score >= 70 ? 'completed' : 'needs review'} />
+              </div>
+            </div>
+            <div className="mt-4 grid gap-4">
+              <div>
+                <p className="text-xs text-gray-400">Strengths</p>
+                <ul className="list-disc pl-4 text-sm text-gray-700">
+                  {(selectedReport.strengths || []).map((item, idx) => <li key={idx}>{item}</li>)}
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Areas for Improvement</p>
+                <ul className="list-disc pl-4 text-sm text-gray-700">
+                  {(selectedReport.improvements || []).map((item, idx) => <li key={idx}>{item}</li>)}
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">Detailed Feedback</p>
+                <p className="text-sm text-gray-700">{selectedReport.detailed_feedback || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+        )}
     </motion.div>
   );
 }
 
-function Resumes() {
+function Resumes({ resumes = [], loading = false, error = '', formatDate }) {
+  const [selectedResume, setSelectedResume] = useState(null);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -806,97 +602,164 @@ function Resumes() {
       <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
         <h3 className="font-bold text-gray-900 text-lg">Uploaded Resumes</h3>
         <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
-          {MOCK_RESUMES.length} files
+          {loading ? 'Loading...' : `${resumes.length} files`}
         </span>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-gray-50">
-              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                ID
-              </th>
-              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                Candidate
-              </th>
-              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                File
-              </th>
-              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                ATS Score
-              </th>
-              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                Size
-              </th>
-              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                Uploaded
-              </th>
-              <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {MOCK_RESUMES.map((r, i) => (
-              <motion.tr
-                key={r.id}
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.07 }}
-                className="hover:bg-indigo-50/40 transition-colors"
-              >
-                <td className="px-6 py-4 text-xs font-mono font-bold text-purple-600">
-                  {r.id}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xs">
-                      {r.user.charAt(0)}
+
+      {loading ? (
+        <div className="px-6 py-8 text-gray-500">Loading resume history...</div>
+      ) : error ? (
+        <div className="px-6 py-8 text-red-500">{error}</div>
+      ) : resumes.length === 0 ? (
+        <div className="px-6 py-8 text-gray-500">No resume history available.</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-50">
+                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">ID</th>
+                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">File</th>
+                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">ATS Score</th>
+                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">Size</th>
+                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">Uploaded</th>
+                <th className="text-left text-xs font-bold text-gray-400 uppercase tracking-wider px-6 py-4">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {resumes.map((r, i) => (
+                <motion.tr
+                  key={r.id}
+                  onClick={() => setSelectedResume(r)}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  className={`hover:bg-indigo-50/40 transition-colors ${selectedResume?.id === r.id ? 'bg-indigo-100/40' : ''}`}
+                >
+                  <td className="px-6 py-4 text-xs font-mono font-bold text-purple-600">{(r.id || '').toString().slice(0, 8)}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center text-red-500 text-xs font-bold">
+                        {r.resume_file_name?.toLowerCase().endsWith('.docx') ? 'W' : 'PDF'}
+                      </div>
+                      <span className="text-xs text-gray-600 font-medium">{r.resume_file_name || 'Unnamed'}</span>
                     </div>
-                    <span className="text-sm font-semibold text-gray-800">
-                      {r.user}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center text-red-500 text-xs font-bold">
-                      {r.file.endsWith(".docx") ? "W" : "PDF"}
-                    </div>
-                    <span className="text-xs text-gray-600 font-medium">
-                      {r.file}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <ScoreBadge score={r.ats} />
-                </td>
-                <td className="px-6 py-4 text-xs text-gray-500">{r.size}</td>
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {r.uploaded}
-                </td>
-                <td className="px-6 py-4">
-                  <StatusPill status={r.status} />
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <ScoreBadge score={r.ats_score || 0} />
+                  </td>
+                  <td className="px-6 py-4 text-xs text-gray-500">{r.analysis?.file_size || 'N/A'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{formatDate(r.created_at || r.updated_at)}</td>
+                  <td className="px-6 py-4">
+                    <StatusPill status={r.ats_score ? 'analyzed' : 'pending'} />
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {selectedResume && (
+        <div className="p-5 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h4 className="text-lg font-bold text-gray-900">Resume Report Details</h4>
+              <p className="text-sm text-gray-500">{selectedResume.username || selectedResume.email || 'Unknown candidate'}</p>
+            </div>
+            <button
+              onClick={() => setSelectedResume(null)}
+              className="text-xs px-2 py-1 rounded bg-gray-200 hover:bg-gray-300"
+            >
+              Close
+            </button>
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-xs text-gray-400">Candidate</p>
+              <p className="font-semibold">{selectedResume.username || selectedResume.email || 'Unknown'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">Created At</p>
+              <p className="font-semibold">{formatDate(selectedResume.created_at)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">Overall Score</p>
+              <p className="font-semibold">{selectedResume.overall_score}%</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">ATS Score</p>
+              <p className="font-semibold">{selectedResume.ats_score}%</p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-xs text-gray-400">Strengths</p>
+              <ul className="list-disc pl-4 text-sm text-gray-700">
+                {(selectedResume.strengths || []).map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400">Weaknesses</p>
+              <ul className="list-disc pl-4 text-sm text-gray-700">
+                {(selectedResume.weaknesses || []).map((item, index) => (
+                  <li key={index}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }
 
-function Analytics() {
-  const interviewTypes = [
-    { label: "Technical", pct: 52, color: "from-blue-500 to-indigo-600" },
-    { label: "Behavioral", pct: 30, color: "from-purple-500 to-violet-600" },
-    { label: "Leadership", pct: 18, color: "from-amber-500 to-orange-500" },
+function Analytics({ users = [], interviews = [], resumes = [], chooseInterviewType }) {
+  const totalInterviews = interviews.length;
+  const analyzedResumes = resumes.filter((r) => r.overall_score !== null && r.overall_score !== undefined).length;
+
+  const avgInterviewScore = totalInterviews
+    ? Math.round(
+        interviews.reduce((sum, r) => sum + (r.overall_score || 0), 0) / totalInterviews
+      )
+    : 0;
+
+  const avgResumeScore = analyzedResumes
+    ? Math.round(
+        resumes.reduce((sum, r) => sum + (r.overall_score || 0), 0) / analyzedResumes
+      )
+    : 0;
+
+  const scoreBands = [
+    { label: '90–100', count: interviews.filter((i) => (i.overall_score || 0) >= 90).length, color: 'from-emerald-500 to-green-400' },
+    { label: '75–89', count: interviews.filter((i) => (i.overall_score || 0) >= 75 && (i.overall_score || 0) < 90).length, color: 'from-blue-500 to-indigo-400' },
+    { label: '60–74', count: interviews.filter((i) => (i.overall_score || 0) >= 60 && (i.overall_score || 0) < 75).length, color: 'from-amber-500 to-yellow-400' },
+    { label: '< 60', count: interviews.filter((i) => (i.overall_score || 0) < 60).length, color: 'from-red-500 to-pink-400' },
   ];
-  const topPerformers = MOCK_INTERVIEWS.sort((a, b) => b.score - a.score).slice(
-    0,
-    3,
+
+  const interviewTypes = [
+    { label: 'Technical', pct: 0, color: 'from-blue-500 to-indigo-600' },
+    { label: 'Behavioral', pct: 0, color: 'from-purple-500 to-violet-600' },
+  ];
+
+  const typeCounts = interviews.reduce(
+    (acc, item) => {
+      const type = (chooseInterviewType ? chooseInterviewType(item) : (item.interview_type || 'Unknown')).toLowerCase();
+      if (type.includes('technical')) acc.technical++;
+      else if (type.includes('behavioral')) acc.behavioral++;
+      else acc.leadership++;
+      return acc;
+    },
+    { technical: 0, behavioral: 0, leadership: 0 }
   );
+
+  const totalTypes = Math.max(1, typeCounts.technical + typeCounts.behavioral);
+  interviewTypes[0].pct = Math.round((typeCounts.technical / totalTypes) * 100);
+  interviewTypes[1].pct = Math.round((typeCounts.behavioral / totalTypes) * 100);
+
+  const topPerformers = [...interviews]
+    .sort((a, b) => (b.overall_score || 0) - (a.overall_score || 0))
+    .slice(0, 3);
 
   return (
     <div className="space-y-6">
@@ -970,9 +833,9 @@ function Analytics() {
                   {i + 1}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-bold text-gray-900">{p.user}</p>
+                  <p className="text-sm font-bold text-gray-900">{p.user?.username || p.username || 'Unknown'}</p>
                   <p className="text-xs text-gray-400">
-                    {p.type} · {p.date}
+                    {`${(chooseInterviewType ? chooseInterviewType(p) : p.interview_type || 'Unknown')} session`} · {p.created_at ? new Date(p.created_at).toLocaleDateString('en-US') : 'Unknown date'}
                   </p>
                 </div>
                 <ScoreBadge score={p.score} />
@@ -982,11 +845,37 @@ function Analytics() {
         </motion.div>
       </div>
 
+
+
+      {/* Score distribution */}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.35 }}
+        className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/60 p-6 shadow-lg"
+      >
+        <h3 className="font-bold text-gray-900 text-lg mb-6">Score Distribution</h3>
+        <div className="space-y-3">
+          {scoreBands.map((band) => (
+            <div key={band.label} className="flex items-center gap-3">
+              <div className="w-24 text-xs text-gray-500">{band.label}</div>
+              <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full bg-gradient-to-r ${band.color}`}
+                  style={{ width: `${totalInterviews ? (band.count / totalInterviews) * 100 : 0}%` }}
+                />
+              </div>
+              <div className="text-xs font-semibold text-gray-700">{band.count}</div>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
       {/* Platform health */}
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.3 }}
+        transition={{ duration: 0.4, delay: 0.45 }}
         className="bg-white/70 backdrop-blur-xl rounded-2xl border border-white/60 p-6 shadow-lg"
       >
         <h3 className="font-bold text-gray-900 text-lg mb-6">
@@ -1002,25 +891,25 @@ function Analytics() {
               sub: "30-day avg",
             },
             {
-              label: "Avg Response",
-              value: "1.2s",
+              label: "Avg Interview Score",
+              value: `${avgInterviewScore}%`,
               color: "text-blue-600",
               bg: "bg-blue-50",
-              sub: "API latency",
+              sub: "from live interviews",
             },
             {
-              label: "STT Accuracy",
-              value: "94%",
+              label: "Avg Resume Score",
+              value: `${avgResumeScore}%`,
               color: "text-purple-600",
               bg: "bg-purple-50",
-              sub: "Whisper model",
+              sub: "from resume analytics",
             },
             {
-              label: "AI Completion",
-              value: "98.5%",
+              label: "Users Total",
+              value: `${users.length}`,
               color: "text-indigo-600",
               bg: "bg-indigo-50",
-              sub: "Mistral calls",
+              sub: "active accounts",
             },
           ].map((m, i) => (
             <motion.div
@@ -1164,6 +1053,15 @@ function Settings() {
 export default function AdminPanel() {
   const [active, setActive] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [users, setUsers] = useState([]);
+  const [interviews, setInterviews] = useState([]);
+  const [resumes, setResumes] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [loadingInterviews, setLoadingInterviews] = useState(true);
+  const [loadingResumes, setLoadingResumes] = useState(true);
+  const [errorUsers, setErrorUsers] = useState("");
+  const [errorInterviews, setErrorInterviews] = useState("");
+  const [errorResumes, setErrorResumes] = useState("");
   const navigate = useNavigate();
 
   const SECTION_TITLES = {
@@ -1175,22 +1073,107 @@ export default function AdminPanel() {
     settings: "Settings",
   };
 
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoadingUsers(true);
+        const usersRes = await api.get('/api/auth/admin/users/');
+        setUsers(usersRes.data || []);
+      } catch (err) {
+        console.error('Failed to load users:', err);
+        const message = err?.response?.data?.detail || 'Unable to load users';
+        setErrorUsers(message);
+        setUsers([]);
+      } finally {
+        setLoadingUsers(false);
+      }
+
+      try {
+        setLoadingInterviews(true);
+        const interviewsRes = await api.get('/api/interview/reports/');
+        setInterviews(interviewsRes.data || []);
+      } catch (err) {
+        console.error('Failed to load interview reports:', err);
+        setErrorInterviews('Unable to load interview reports');
+        setInterviews([]);
+      } finally {
+        setLoadingInterviews(false);
+      }
+
+      try {
+        setLoadingResumes(true);
+        const resumesRes = await api.get('/api/candidates/reports/?page=1&limit=1000');
+        setResumes(resumesRes.data?.results || []);
+      } catch (err) {
+        console.error('Failed to load resume reports:', err);
+        setErrorResumes('Unable to load resume reports');
+        setResumes([]);
+      } finally {
+        setLoadingResumes(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const chooseInterviewType = (report) => {
+    if (report.skill_scores && report.skill_scores.technical_depth !== undefined) {
+      return 'Technical';
+    }
+    if (report.skill_scores && report.skill_scores.empathy_and_self_awareness !== undefined) {
+      return 'Behavioral';
+    }
+    return 'Unknown';
+  };
+
   const renderContent = () => {
     switch (active) {
       case "overview":
-        return <Overview />;
+        return <Overview users={users} interviews={interviews} resumes={resumes} />;
       case "users":
-        return <Users />;
+        return (
+          <Users
+            users={users}
+            loading={loadingUsers}
+            error={errorUsers}
+            formatDate={formatDate}
+            onUserRemoved={(id) => setUsers((prev) => prev.filter((u) => u.id !== id))}
+          />
+        );
       case "interviews":
-        return <Interviews />;
+        return (
+          <Interviews
+            interviews={interviews}
+            loading={loadingInterviews}
+            error={errorInterviews}
+            formatDate={formatDate}
+            chooseInterviewType={chooseInterviewType}
+          />
+        );
       case "resumes":
-        return <Resumes />;
+        return (
+          <Resumes
+            resumes={resumes}
+            loading={loadingResumes}
+            error={errorResumes}
+            formatDate={formatDate}
+          />
+        );
       case "analytics":
-        return <Analytics />;
+        return <Analytics users={users} interviews={interviews} resumes={resumes} chooseInterviewType={chooseInterviewType} />;
       case "settings":
         return <Settings />;
       default:
-        return <Overview />;
+        return <Overview users={users} interviews={interviews} resumes={resumes} />;
     }
   };
 
