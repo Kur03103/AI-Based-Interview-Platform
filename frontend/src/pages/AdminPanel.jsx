@@ -85,9 +85,7 @@ const NAV = [
   },
 ];
 
-/* ─────────────────────────────────────────────────────────────
-   STAT CARD
-───────────────────────────────────────────────────────────── */
+
 function StatCard({ label, value, sub, gradient, icon, index }) {
   return (
     <motion.div
