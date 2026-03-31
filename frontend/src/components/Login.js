@@ -83,8 +83,11 @@ const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
       <div className="flex flex-col space-y-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
         <button
           type="button"
-          onClick={(e) => e.preventDefault()}
-          className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition duration-200"
+          onClick={(e) => {
+            e.preventDefault();
+            alert("Password reset functionality is being set up. Please contact your administrator if you've lost access.");
+          }}
+          className="text-xs text-right text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium transition duration-200"
         >
           Forgot password?
         </button>

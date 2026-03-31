@@ -1055,6 +1055,7 @@ export default function AdminPanel() {
   const [errorUsers, setErrorUsers] = useState("");
   const [errorInterviews, setErrorInterviews] = useState("");
   const [errorResumes, setErrorResumes] = useState("");
+  const [notifOpen, setNotifOpen] = useState(false);
   const navigate = useNavigate();
 
   const SECTION_TITLES = {
@@ -1387,26 +1388,66 @@ export default function AdminPanel() {
             </div>
 
             {/* Notification bell */}
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              className="relative w-9 h-9 rounded-xl bg-white/60 border border-gray-200 flex items-center justify-center text-gray-500 hover:text-indigo-600 transition-colors"
-            >
-              <svg
-                className="w-4.5 h-4.5 w-[18px] h-[18px]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            <div className="relative">
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setNotifOpen(!notifOpen)}
+                className={`relative w-9 h-9 rounded-xl border flex items-center justify-center transition-colors ${notifOpen ? 'bg-indigo-600 text-white' : 'bg-white/60 border-gray-200 text-gray-500 hover:text-indigo-600'}`}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.8}
-                  d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
-                />
-              </svg>
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white" />
-            </motion.button>
+                <svg
+                  className="w-[18px] h-[18px]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.8}
+                    d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
+                  />
+                </svg>
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-1 ring-white" />
+              </motion.button>
+
+              <AnimatePresence>
+                {notifOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-3 w-80 bg-white/90 backdrop-blur-2xl rounded-2xl border border-white/60 shadow-2xl z-50 overflow-hidden"
+                  >
+                    <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                      <h3 className="font-bold text-gray-900">Notifications</h3>
+                      <span className="text-[10px] font-bold text-white bg-indigo-600 px-1.5 py-0.5 rounded-full">3 New</span>
+                    </div>
+                    <div className="max-h-96 overflow-y-auto">
+                      {[
+                        { title: "New User Registered", time: "2 mins ago", sub: "User 'johndoe' joined the platform", icon: "👤", color: "bg-blue-100" },
+                        { title: "Interview Completed", time: "15 mins ago", sub: "Technical interview #124 finished", icon: "🎤", color: "bg-green-100" },
+                        { title: "System Update", time: "1 hour ago", sub: "Mistral v2.1 integration successful", icon: "⚙️", color: "bg-purple-100" },
+                      ].map((n, i) => (
+                        <div key={i} className="p-4 hover:bg-gray-50/50 cursor-pointer border-b border-gray-50 last:border-0 transition-colors">
+                          <div className="flex gap-3">
+                            <span className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg ${n.color}`}>{n.icon}</span>
+                            <div className="flex-1">
+                              <p className="text-xs font-bold text-gray-900">{n.title}</p>
+                              <p className="text-[10px] text-gray-500 leading-tight mt-0.5">{n.sub}</p>
+                              <p className="text-[9px] text-indigo-500 font-bold mt-1 uppercase tracking-tighter">{n.time}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button className="w-full py-3 text-xs font-bold text-gray-400 hover:text-indigo-600 hover:bg-gray-50 transition-colors">
+                      View All Notifications
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Admin avatar */}
             <motion.div

@@ -408,18 +408,13 @@ const Interview = () => {
     setIsAnalyzing(true);
     setAnalysisData(null);
     try {
-      const res = await fetch(`${API_BASE}/api/interview/analyze/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id: sessionId,
-          conversation: conv,
-          interview_type: selectedInterviewType,
-          duration: selectedDuration,
-        }),
+      const response = await api.post("/api/interview/analyze/", {
+        session_id: sessionId,
+        conversation: conv,
+        interview_type: selectedInterviewType,
+        duration: selectedDuration,
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const data = response.data;
       if (isMounted.current) {
         setAnalysisData(data);
         // Automatically save the report (don't block UI if it fails)
@@ -696,11 +691,10 @@ const Interview = () => {
       formData.append("audio", audioBlob, "speech.webm");
       formData.append("sessionId", sessionId);
 
-      const res = await fetch(`${API_BASE}/api/interview/stt/`, {
-        method: "POST",
-        body: formData,
+      const response = await api.post("/api/interview/stt/", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      const data = await res.json();
+      const data = response.data;
       console.log("[Interview] STT backend response", data);
 
       const text = (data && data.text ? data.text : "").trim();
@@ -918,17 +912,13 @@ const Interview = () => {
     }
 
     try {
-      const res = await fetch(`${API_BASE}/api/interview/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: message,
-          sessionId: sessionId,
-          interviewType: selectedInterviewType,
-          duration: selectedDuration,
-        }),
+      const response = await api.post("/api/interview/", {
+        message: message,
+        session_id: sessionId,
+        interview_type: selectedInterviewType,
+        duration: selectedDuration,
       });
-      const data = await res.json();
+      const data = response.data;
       console.log("[Interview] backend response", data);
 
       if (data && data.ai_response) {

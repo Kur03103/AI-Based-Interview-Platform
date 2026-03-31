@@ -60,7 +60,7 @@ class InterviewView(APIView):
     
     Returns JSON: { "ai_response": "<AI reply text>" }
     """
-    permission_classes = [AllowAny]  # No authentication required for now
+    permission_classes = [IsAuthenticated]  # Require authentication to access candidate CV data
     
     def post(self, request):
         user_message = request.data.get('message', '').strip()
@@ -85,29 +85,62 @@ class InterviewView(APIView):
 
         # SYSTEM PROMPTS based on interview type
         if interview_type == 'behavioral':
+            # Try to get candidate's resume info AND signup info for behavioral interview
+            resume_context = ""
+            user = request.user
+            try:
+                from candidates.models import ResumeReport
+                from .models import InterviewSignup
+                
+                # Get latest resume analysis
+                latest_report = ResumeReport.objects.filter(user=user).order_by('-created_at').first()
+                # Get interview signup data (role, experience)
+                signup = InterviewSignup.objects.filter(user=user).first()
+                
+                resume_context = "\n\nCANDIDATE'S PROFILE (Use this to tailor your behavioral questions):\n"
+                
+                if signup:
+                    resume_context += f"- Target Job Role: {signup.job_role or 'Not specified'}\n"
+                    resume_context += f"- Experience Level: {signup.get_experience_level_display() if hasattr(signup, 'get_experience_level_display') else signup.experience_level}\n"
+                
+                if latest_report:
+                    resume_context += f"- Strengths: {', '.join(latest_report.strengths[:5])}\n"
+                    resume_context += f"- Areas for growth: {', '.join(latest_report.weaknesses[:3])}\n"
+                    resume_context += f"- Overall Profile ATS Score: {latest_report.ats_score}%\n"
+                    
+            except Exception as e:
+                print(f"[Interview API] Warning: Error fetching resume context: {e}")
+
             system_prompt = (
-                "You are a professional behavioral interviewer conducting a live audio interview. "
-                "Speak clearly and naturally like a human on a call. "
-                "Ask behavioral and situational questions about teamwork, leadership, conflict resolution, and problem-solving. "
-                "Use the STAR method (Situation, Task, Action, Result) framework. "
+                "You are an expert behavioral interviewer conducting a live audio interview. "
+                "Your goal is to evaluate the candidate's soft skills, leadership potential, and cultural fit. "
+                "Speak clearly, warmly, and naturally, like a human interviewer on a call. "
+                f"{resume_context if resume_context else ''}"
+                "Step 1: Greet the candidate warmly and introduce yourself as the interviewer. "
+                "Step 2: Ask behavioral questions based on the candidate's skills and the role they are applying for. "
+                "Use the STAR method (Situation, Task, Action, Result) for all behavioral assessments. "
                 "Ask one question at a time and wait for the candidate's response. "
-                "Give brief encouraging feedback before moving to the next question. "
-                "Focus on soft skills, communication, and past experiences. "
-                "Keep responses concise and professional. "
-                "Do not mention AI, models, or prompts. "
-                "End the interview politely when requested."
+                "Provide brief, encouraging feedback before moving to the next question. "
+                "Maintain a professional and engaging tone. "
+                "Keep responses concise (max 2-3 sentences). "
+                "Do not mention AI, GPT, or pre-written prompts. "
+                "End the interview politely if requested."
             )
         else:  # default to technical
             system_prompt = (
                 "You are a professional technical interviewer conducting a live audio interview. "
-                "Speak clearly and naturally like a human on a call. "
-                "Ask technical questions about programming, algorithms, data structures, and system design. "
-                "Ask one question at a time and wait for the candidate's response. "
-                "Give brief constructive feedback before moving to the next question. "
+                "Your goal is to evaluate the candidate's technical skills, fundamental computer science knowledge, and problem-solving abilities. "
+                "Speak clearly and naturally like a human interviewer. "
+                "Step 1: Greet the candidate warmly and introduce yourself. "
+                "Step 2: Start by asking fundamental computer science and programming questions (e.g., data structures, algorithms, memory management, OOP). "
+                "Step 3: Gradually increase the difficulty based on the candidate's responses. "
+                "Ask one question at a time and wait for the response. "
+                "Give brief constructive feedback after each answer. "
                 "Keep responses concise and to the point. "
-                "Do not give long explanations or hints unless asked. "
+                "Do not give long explanations unless asked. "
                 "Do not mention AI, models, or prompts. "
-                "End the interview politely when requested."
+                "Maintain a professional and encouraging tone throughout. "
+                "End the interview politely if requested."
             )
 
         # Build messages for Mistral API
@@ -118,9 +151,13 @@ class InterviewView(APIView):
         
         # Add current user message (or request initial greeting)
         if not user_message:
+            greeting_msg = "Please greet the candidate warmly, introduce yourself, and start the interview with a fundamental computer science question."
+            if interview_type == 'behavioral':
+                greeting_msg = "Please greet the candidate warmly, introduce yourself, and ask the first behavioral question based on their profile."
+            
             messages.append({
                 "role": "user", 
-                "content": "Please greet the candidate and start the interview with the first question."
+                "content": greeting_msg
             })
         else:
             messages.append({"role": "user", "content": user_message})
