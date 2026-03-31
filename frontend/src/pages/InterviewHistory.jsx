@@ -9,20 +9,32 @@ const InterviewHistory = () => {
   const [error, setError] = useState("");
   const [selectedReport, setSelectedReport] = useState(null);
 
+  const isMounted = React.useRef(true);
+  
   useEffect(() => {
+    isMounted.current = true;
     fetchReports();
+    return () => {
+      isMounted.current = false;
+    };
   }, []);
 
   const fetchReports = async () => {
     try {
       setLoading(true);
       const response = await api.get('/api/interview/reports/');
-      setReports(response.data);
+      if (isMounted.current) {
+        setReports(response.data);
+      }
     } catch (err) {
       console.error("Failed to fetch interview reports:", err);
-      setError("Failed to load interview history");
+      if (isMounted.current) {
+        setError("Failed to load interview history");
+      }
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
   };
 

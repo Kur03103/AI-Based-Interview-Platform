@@ -56,7 +56,6 @@ const GlassNavbar = ({
   setActiveSection,
   userName,
   onSignOut,
-  handleLogout,
   userMenuOpen,
   setUserMenuOpen,
   navigate,
@@ -329,7 +328,7 @@ const GlassNavbar = ({
                       <button
                         onClick={() => {
                           setUserMenuOpen(false);
-                          handleLogout();
+                          onSignOut();
                         }}
                         className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors"
                       >
@@ -613,7 +612,7 @@ const Dashboard = () => {
         userMenuOpen={userMenuOpen}
         setUserMenuOpen={setUserMenuOpen}
         navigate={navigate}
-        isAdmin={auth.user?.is_staff || auth.user?.is_superuser}
+        isAdmin={auth.user?.is_superuser}
       />
 
       {/* Main Content Container */}

@@ -1066,47 +1066,59 @@ export default function AdminPanel() {
     settings: "Settings",
   };
 
+  const isMounted = React.useRef(true);
+
   useEffect(() => {
+    isMounted.current = true;
     const loadData = async () => {
       try {
         setLoadingUsers(true);
         const usersRes = await api.get('/api/auth/admin/users/');
-        setUsers(usersRes.data || []);
+        if (isMounted.current) setUsers(usersRes.data || []);
       } catch (err) {
         console.error('Failed to load users:', err);
         const message = err?.response?.data?.detail || 'Unable to load users';
-        setErrorUsers(message);
-        setUsers([]);
+        if (isMounted.current) {
+          setErrorUsers(message);
+          setUsers([]);
+        }
       } finally {
-        setLoadingUsers(false);
+        if (isMounted.current) setLoadingUsers(false);
       }
 
       try {
         setLoadingInterviews(true);
         const interviewsRes = await api.get('/api/interview/reports/');
-        setInterviews(interviewsRes.data || []);
+        if (isMounted.current) setInterviews(interviewsRes.data || []);
       } catch (err) {
         console.error('Failed to load interview reports:', err);
-        setErrorInterviews('Unable to load interview reports');
-        setInterviews([]);
+        if (isMounted.current) {
+          setErrorInterviews('Unable to load interview reports');
+          setInterviews([]);
+        }
       } finally {
-        setLoadingInterviews(false);
+        if (isMounted.current) setLoadingInterviews(false);
       }
 
       try {
         setLoadingResumes(true);
         const resumesRes = await api.get('/api/candidates/reports/?page=1&limit=1000');
-        setResumes(resumesRes.data?.results || []);
+        if (isMounted.current) setResumes(resumesRes.data?.results || []);
       } catch (err) {
         console.error('Failed to load resume reports:', err);
-        setErrorResumes('Unable to load resume reports');
-        setResumes([]);
+        if (isMounted.current) {
+          setErrorResumes('Unable to load resume reports');
+          setResumes([]);
+        }
       } finally {
-        setLoadingResumes(false);
+        if (isMounted.current) setLoadingResumes(false);
       }
     };
 
     loadData();
+    return () => {
+      isMounted.current = false;
+    };
   }, []);
 
   const formatDate = (dateString) => {

@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const ProtectedRoute = () => {
+const ProtectedRoute = ({ adminOnly = false }) => {
     const { auth } = useAuth();
     const location = useLocation();
 
@@ -10,11 +10,15 @@ const ProtectedRoute = () => {
         return <div>Loading...</div>; // Or a spinner
     }
 
-    return auth.isAuthenticated ? (
-        <Outlet />
-    ) : (
-        <Navigate to="/" replace />
-    );
+    if (!auth.isAuthenticated) {
+        return <Navigate to="/" replace />;
+    }
+
+    if (adminOnly && !auth.user?.is_superuser) {
+        return <Navigate to="/home" replace />;
+    }
+
+    return <Outlet />;
 };
 
 export default ProtectedRoute;

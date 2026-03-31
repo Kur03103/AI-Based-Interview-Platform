@@ -47,6 +47,14 @@ const Interview = () => {
   const analyserRef = useRef(null); // Analyser for detecting speech/silence
   const silenceDetectionIntervalRef = useRef(null); // Interval for checking silence
   const lastSoundTimeRef = useRef(0); // Timestamp of last detected sound
+  const isMounted = useRef(true);
+  
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   // Auto-scroll chat to bottom when new messages arrive
   useEffect(() => {
@@ -157,6 +165,9 @@ const Interview = () => {
 
       if (liveText) {
         silenceTimerRef.current = setTimeout(() => {
+          // If we are muted, do not send anything
+          if (isMutedRef.current) return;
+
           // Time to send after 2 seconds of silence!
           const finalText = accumulatedTranscriptRef.current.trim();
           const textToSend = (finalText + " " + interim).trim();
@@ -237,25 +248,31 @@ const Interview = () => {
     recognitionRef.current = recognition;
 
     // Ensure voices are loaded
+    const handleVoicesChanged = () => {
+      if (synthRef.current) synthRef.current.getVoices();
+    };
+
     if (synthRef.current) {
-      if (synthRef.current.getVoices().length === 0) {
-        window.speechSynthesis.onvoiceschanged = () => {
-          synthRef.current.getVoices();
-        };
-      }
+      window.speechSynthesis.onvoiceschanged = handleVoicesChanged;
+      synthRef.current.getVoices(); // Initial call
     }
 
     return () => {
       if (recognitionRef.current) {
         try {
           recognitionRef.current.onend = null;
+          recognitionRef.current.onresult = null;
+          recognitionRef.current.onerror = null;
+          recognitionRef.current.onstart = null;
           recognitionRef.current.stop();
         } catch (e) {}
       }
-      if (synthRef.current)
+      if (synthRef.current) {
+        window.speechSynthesis.onvoiceschanged = null;
         try {
           synthRef.current.cancel();
         } catch (e) {}
+      }
     };
   }, []);
 
@@ -306,6 +323,20 @@ const Interview = () => {
     isProcessingRef.current = false;
     setInterviewCompleted(false);
     setShowFinalResults(false);
+
+    // Initialize AudioContext on user gesture to prevent browser warnings
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (
+          window.AudioContext || window.webkitAudioContext
+        )();
+      }
+      if (audioContextRef.current.state === "suspended") {
+        await audioContextRef.current.resume();
+      }
+    } catch (e) {
+      console.warn("Could not initialize AudioContext on start:", e);
+    }
 
     // Initialize countdown timer (convert minutes to seconds)
     setTimeRemaining(selectedDuration * 60);
@@ -389,14 +420,15 @@ const Interview = () => {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setAnalysisData(data);
-      
-      // Automatically save the report (don't block UI if it fails)
-      saveInterviewReport(data);
+      if (isMounted.current) {
+        setAnalysisData(data);
+        // Automatically save the report (don't block UI if it fails)
+        saveInterviewReport(data);
+      }
     } catch (err) {
       console.error("[Interview] Analysis fetch error:", err);
     } finally {
-      setIsAnalyzing(false);
+      if (isMounted.current) setIsAnalyzing(false);
     }
   };
 
@@ -650,6 +682,7 @@ const Interview = () => {
 
   const sendRecordedAudioToBackend = async (audioBlob) => {
     if (!sessionId || !audioBlob || !audioBlob.size) return;
+    if (isMutedRef.current) return;
 
     console.log(
       "[Interview] Sending audio to STT backend, size:",
@@ -673,18 +706,24 @@ const Interview = () => {
       const text = (data && data.text ? data.text : "").trim();
       if (!text) {
         console.warn("[Interview] STT returned empty text");
-        setStatus("Error");
-        isProcessingRef.current = false;
+        if (isMounted.current) {
+            setStatus("Error");
+            isProcessingRef.current = false;
+        }
         return;
       }
 
       // Show user's transcribed answer and continue interview as usual
-      setConversation((prev) => [...prev, { role: "user", content: text }]);
-      await handleSendToBackend(text);
+      if (isMounted.current) {
+          setConversation((prev) => [...prev, { role: "user", content: text }]);
+          await handleSendToBackend(text);
+      }
     } catch (err) {
       console.error("[Interview] STT API error", err);
-      setStatus("Error");
-      isProcessingRef.current = false;
+      if (isMounted.current) {
+          setStatus("Error");
+          isProcessingRef.current = false;
+      }
     }
   };
 
@@ -736,6 +775,12 @@ const Interview = () => {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         audioChunksRef.current = [];
 
+        if (isMutedRef.current) {
+          console.log("[Interview] Recording stopped because of mute, discarding audio");
+          setStatus("Muted");
+          return;
+        }
+
         // Only send if we have actual audio data
         if (blob.size > 0) {
           await sendRecordedAudioToBackend(blob);
@@ -759,6 +804,10 @@ const Interview = () => {
         audioContextRef.current = new (
           window.AudioContext || window.webkitAudioContext
         )();
+      }
+      
+      if (audioContextRef.current.state === "suspended") {
+          audioContextRef.current.resume().catch(e => console.warn("AudioContext resume failed", e));
       }
 
       const audioContext = audioContextRef.current;
@@ -851,6 +900,8 @@ const Interview = () => {
 
   const handleSendToBackend = async (message) => {
     if (!sessionId) return;
+    if (isMutedRef.current && message !== "") return; // Allow initial greeting (empty msg) but block user speech if muted.
+
     // Clear any pending silence timer to avoid double-sending
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     accumulatedTranscriptRef.current = "";
@@ -882,27 +933,33 @@ const Interview = () => {
 
       if (data && data.ai_response) {
         const aiText = data.ai_response;
-        setConversation((prev) => [...prev, { role: "ai", content: aiText }]);
-        setAiTranscript(aiText);
+        if (isMounted.current) {
+            setConversation((prev) => [...prev, { role: "ai", content: aiText }]);
+            setAiTranscript(aiText);
+        }
 
         // Use browser TTS
         await speakResponse(aiText);
       } else {
         console.error("Unexpected backend response", data);
-        setStatus("Error");
-        isProcessingRef.current = false;
-        if (isInterviewActiveRef.current && !isMutedRef.current)
-          startRecordingTurn();
+        if (isMounted.current) {
+            setStatus("Error");
+            isProcessingRef.current = false;
+            if (isInterviewActiveRef.current && !isMutedRef.current)
+              startRecordingTurn();
+        }
       }
     } catch (err) {
       console.error("Interview API error", err);
-      setStatus("Error");
-      isProcessingRef.current = false;
-      if (isInterviewActiveRef.current && !isMutedRef.current)
-        startRecordingTurn();
+      if (isMounted.current) {
+          setStatus("Error");
+          isProcessingRef.current = false;
+          if (isInterviewActiveRef.current && !isMutedRef.current)
+            startRecordingTurn();
+      }
     } finally {
       // Clear any user interim
-      setUserTranscript("");
+      if (isMounted.current) setUserTranscript("");
       // Note: Mic will auto-restart after AI finishes speaking (in speakResponse)
     }
   };
@@ -1065,6 +1122,8 @@ const Interview = () => {
   const toggleMute = () => {
     setIsMuted((prev) => {
       const next = !prev;
+      isMutedRef.current = next; // Immediate update!
+      
       if (next) {
         // Muting: stop any recording and TTS
         stopRecordingIfNeeded();

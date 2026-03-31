@@ -35,6 +35,10 @@ function App() {
               <Route path="/interview" element={<Interview />} />
               <Route path="/interview-history" element={<InterviewHistory />} />
               <Route path="/resume-history" element={<ResumeHistory />} />
+            </Route>
+
+            {/* Admin only route */}
+            <Route element={<ProtectedRoute adminOnly={true} />}>
               <Route path="/admin" element={<AdminPanel />} />
             </Route>
 
