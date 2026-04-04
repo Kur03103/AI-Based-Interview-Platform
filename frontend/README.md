@@ -1,70 +1,74 @@
-# Getting Started with Create React App
+# 💻 AI Interview Platform Frontend (React)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+The frontend for the AI Interview Platform is a high-performance Single Page Application (SPA) built with **React 18** and **Tailwind CSS**. It provides a glassmorphic dashboard for candidates to manage their resumes, participate in AI-driven audio interviews, and view their performance reports.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## 🎨 UI/UX Design
+The application follows a modern **Glassmorphism** design language with:
+-   **Vibrant Gradients**: Indigo, Purple, and Green accent colors for different interview states.
+-   **Dark/Light Mode**: Full theme switching using a custom `ThemeContext` and Tailwind's `dark` variant.
+-   **Responsive Layout**: Fully functional on desktop, tablet, and mobile browsers.
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## ⚙️ Key Frontend Architectures
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 1. Authentication Lifecycle
+Managed through `src/context/AuthContext.js`:
+-   **JWT Storage**: Access and refresh tokens are stored in `localStorage`.
+-   **Token Interceptor**: Custom `axios` instance (`src/api/axios.js`) automatically attaches headers and handles 401 unauthorized retries.
+-   **Google OAuth Callback**: Handled at `src/pages/AuthCallback.jsx` to secure tokens from the backend redirect.
 
-### `npm test`
+### 2. Audio Pipeline
+-   **Mic Recording**: Captures user audio blobs and posts them to the `/api/auth/google/callback/stt/` (or equivalent) endpoint.
+-   **Audio Feedback Loop**: 
+    -   Displays transcription in real-time.
+    -   Triggers a state transition to "Thinking" mode when user stops speaking.
+    -   Synthesizes the AI text response using the browser's `SpeechSynthesis` API.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 3. State-Driven Dashboards
+-   **Interview Stats**: Visual representation of scores from `src/pages/Dashboard.jsx`.
+-   **Interview History**: Dynamic lists and detailed views of past performance data.
+-   **ATS Tracking**: Resume upload and real-time analysis display.
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🏗️ Folder Structure
+-   `/src/api`: Axios instance and common service calls.
+-   `/src/components`: UI components (Navbar, Sidebar, ProtectedRoute, etc.).
+-   `/src/context`: Authentication and Theme state providers.
+-   `/src/pages`: Main page entry points (Dashboard, Login, Register, Interview, etc.).
+-   `/src/sections`: Complex logical sections (Resume uploaders, analysis charts).
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🚀 Setting Up Locally
 
-### `npm run eject`
+1.  **Install Dependencies**:
+    ```bash
+    npm install
+    ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2.  **Environment Variables**:
+    Create a `.env` in the `frontend/` directory (optional if using default backend proxy):
+    ```env
+    REACT_APP_API_URL=http://localhost:8000
+    ```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+3.  **Run Development Server**:
+    ```bash
+    npm start
+    ```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 🛡️ Protected Routes
+Access to the dashboard and interview pages is guarded by `src/components/ProtectedRoute.jsx`. Any unauthorized attempt to access these routes will gracefully redirect the user back to the `/login` screen.
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## 📝 Scripts
+-   `npm start`: Runs the app in development mode.
+-   `npm run build`: Minifies the assets for production deployment.
+-   `npm test`: Launches the test runner.
