@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
             const token = localStorage.getItem('access_token');
             if (token) {
                 try {
-                    const response = await api.get('/api/auth/me/');
+                    const response = await api.get('/api/auth/user/');
                     setAuth({
                         user: response.data,
                         isAuthenticated: true,
@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('refresh_token', refresh);
 
             // Fetch user details immediately
-            const userResponse = await api.get('/api/auth/me/');
+            const userResponse = await api.get('/api/auth/user/');
 
             setAuth({
                 user: userResponse.data,
@@ -61,6 +61,40 @@ export const AuthProvider = ({ children }) => {
             return true;
         } catch (error) {
             console.error("Login failed", error);
+            throw error;
+        }
+    };
+
+    const loginWithTokens = async (access, refresh) => {
+        try {
+            localStorage.setItem('access_token', access);
+            localStorage.setItem('refresh_token', refresh);
+
+            // Fetch user details immediately
+            const userResponse = await api.get('/api/auth/user/');
+
+            setAuth({
+                user: userResponse.data,
+                isAuthenticated: true,
+                loading: false,
+            });
+            return true;
+        } catch (error) {
+            console.error("Token login failed", error);
+            // Cleanup on failure
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            throw error;
+        }
+    };
+
+
+    const forgotPassword = async (email) => {
+        try {
+            const response = await api.post('/api/auth/forgot-password/', { email });
+            return response.data;
+        } catch (error) {
+            console.error("Forgot password check failed", error);
             throw error;
         }
     };
@@ -89,7 +123,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ auth, login, register, logout }}>
+        <AuthContext.Provider value={{ auth, login, register, logout, loginWithTokens, forgotPassword }}>
             {children}
         </AuthContext.Provider>
     );

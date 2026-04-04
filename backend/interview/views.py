@@ -112,8 +112,8 @@ class InterviewView(APIView):
                 print(f"[Interview API] Warning: Error fetching resume context: {e}")
 
             system_prompt = (
-                "You are an expert behavioral interviewer conducting a live audio interview. "
-                "Your goal is to evaluate the candidate's soft skills, leadership potential, and cultural fit. "
+                "You are an expert Resume & CV focused interviewer conducting a live audio interview. "
+                "Your goal is to evaluate the candidate based on their professional background, soft skills, and cultural fit. "
                 "Speak clearly, warmly, and naturally, like a human interviewer on a call. "
                 f"{resume_context if resume_context else ''}"
                 "Step 1: Greet the candidate warmly and introduce yourself as the interviewer. "

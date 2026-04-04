@@ -444,7 +444,7 @@ const Interview = () => {
     const d = analysisData;
     const date = new Date().toLocaleString();
     const type =
-      selectedInterviewType === "technical" ? "Technical" : "Behavioral";
+      selectedInterviewType === "technical" ? "Technical" : "Resume CV";
     const skillKey =
       selectedInterviewType === "technical"
         ? "technical_depth"
@@ -1187,7 +1187,7 @@ const Interview = () => {
             <span className="text-sm font-medium tracking-wide text-gray-300">
               {selectedInterviewType === "technical"
                 ? "Technical"
-                : "Behavioral"}{" "}
+                : "Resume CV"}{" "}
               Interview Session
             </span>
           </div>
@@ -1313,7 +1313,7 @@ const Interview = () => {
               </div>
             </motion.div>
 
-            {/* Behavioral Interview Card */}
+            {/* Resume CV Interview Card */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -1344,11 +1344,11 @@ const Interview = () => {
 
                 {/* Title */}
                 <h3 className="text-2xl font-bold mb-3 text-white">
-                  Behavioral Interview
+                  Resume CV Interview
                 </h3>
                 <p className="text-gray-400 mb-6 leading-relaxed">
-                  Master soft skills, leadership scenarios, and behavioral
-                  questions with personalized AI analysis.
+                  Practice questions tailored to your resume, job role, and
+                  technical background with personalized AI analysis.
                 </p>
 
                 {/* Features */}
@@ -1371,14 +1371,14 @@ const Interview = () => {
                 {/* CTA Button */}
                 <button
                   onClick={() => {
-                    console.log("[DEBUG] Behavioral button clicked");
+                    console.log("[DEBUG] Resume CV button clicked");
                     setSelectedInterviewType("behavioral");
                     setShowDurationModal(true);
                     console.log("[DEBUG] Modal state set to true");
                   }}
                   className="w-full px-6 py-3 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 rounded-xl font-semibold text-white shadow-lg hover:shadow-pink-500/50 transition-all duration-300 transform hover:scale-[1.02]"
                 >
-                  Start Behavioral Interview
+                  Start Resume CV Interview
                 </button>
               </div>
             </motion.div>
@@ -1797,7 +1797,7 @@ const Interview = () => {
                 <p className="text-gray-400 text-sm">
                   {selectedInterviewType === "technical"
                     ? "Technical"
-                    : "Behavioral"}{" "}
+                    : "Resume CV"}{" "}
                   Interview · {selectedDuration} min
                 </p>
               </div>

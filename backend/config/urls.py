@@ -13,7 +13,9 @@ admin.site.has_permission = lambda request: request.user.is_active and request.u
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('accounts.urls')),
+    path('accounts/', include('accounts.urls')),
     path('api/candidates/', include('candidates.urls')),
+
     path('api/interview/', include('interview.urls')),
     path('', home),
 ]

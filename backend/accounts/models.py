@@ -9,6 +9,8 @@ class CustomUser(AbstractUser):
     name = models.CharField(max_length=255, blank=True, null=True)
     email = models.EmailField(unique=True)
     age = models.IntegerField(blank=True, null=True)
+    profile_picture = models.URLField(max_length=500, blank=True, null=True)
+    auth_provider = models.CharField(max_length=50, default='email')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

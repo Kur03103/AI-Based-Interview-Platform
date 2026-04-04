@@ -9,6 +9,8 @@ import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import AuthCallback from "./pages/AuthCallback";
+
 import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
 import Interview from "./pages/Interview";
@@ -28,6 +30,8 @@ function App() {
             <Route path="/landing" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+
 
             {/* Protected Routes - requires authentication */}
             <Route element={<ProtectedRoute />}> 
