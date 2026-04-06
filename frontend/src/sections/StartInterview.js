@@ -179,10 +179,10 @@ export default function StartInterview() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-3">
-            Behavioral Interview
+            Resume from CV Interview
           </h2>
           <p className="text-gray-600 mb-6 leading-relaxed">
-            Assess soft skills, communication, and problem-solving abilities.
+            Assess soft skills, communication, and resume-based experience.
           </p>
 
           <div className="space-y-3 mb-8">
@@ -220,7 +220,7 @@ export default function StartInterview() {
                   d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z"
                 />
               </svg>
-              Start Behavioral
+              Start Resume from CV
             </span>
           </motion.button>
         </motion.div>

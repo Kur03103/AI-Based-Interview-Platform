@@ -61,6 +61,8 @@ class InterviewReportSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'user',
+            'session_id',
+            'interview_type',
             'overall_score',
             'duration',
             'question_count',

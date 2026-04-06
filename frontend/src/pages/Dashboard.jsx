@@ -175,16 +175,22 @@ const GlassNavbar = ({
               {navItems.map((item) => (
                 <motion.button
                   key={item.id}
-                  onClick={() => setActiveSection(item.id)}
+                  onClick={() => {
+                    if (item.id === "admin") {
+                      navigate("/admin");
+                    } else {
+                      setActiveSection(item.id);
+                    }
+                  }}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   className={`relative px-4 py-2 rounded-xl transition-all duration-300 flex items-center gap-2 ${
-                    activeSection === item.id
+                    (activeSection === item.id && item.id !== "admin")
                       ? "text-white"
                       : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100/50 dark:hover:bg-gray-700/50"
                   }`}
                 >
-                  {activeSection === item.id && (
+                  {activeSection === item.id && item.id !== "admin" && (
                     <motion.div
                       layoutId="activeTab"
                       className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/30"
@@ -533,49 +539,6 @@ const Dashboard = () => {
         break;
       case "about":
         content = <About />;
-        break;
-      case "admin":
-        content = (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="max-w-7xl mx-auto"
-          >
-            <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 dark:border-gray-700/50 p-8">
-              <div className="text-center mb-8">
-                <motion.div
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center shadow-lg shadow-red-500/30"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-10 h-10 text-white"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V18zm0 2.25h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5v-.008zm2.25-2.25h.008v.008H18.75V18zm2.25 0h.008v.008H21V18zm-2.25 2.25h.008v.008H18.75v-.008zm2.25 0h.008v.008H21v-.008z"
-                    />
-                  </svg>
-                </motion.div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  Admin Dashboard
-                </h1>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Manage users and view analysis reports
-                </p>
-              </div>
-
-              <AdminPanel />
-            </div>
-          </motion.div>
-        );
         break;
       default:
         content = (

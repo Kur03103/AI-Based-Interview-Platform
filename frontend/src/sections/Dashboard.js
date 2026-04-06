@@ -663,7 +663,7 @@ export default function Dashboard({ userName, setActiveSection }) {
       ),
     },
     {
-      title: "Technical & Behavioral",
+      title: "Technical & Resume from CV",
       text: "Specialized interview modes for coding roles and leadership positions with adaptive AI questions.",
       gradient: "from-pink-500 to-rose-600",
       icon: (
@@ -728,7 +728,7 @@ export default function Dashboard({ userName, setActiveSection }) {
     {
       number: "01",
       category: "Confidence",
-      tip: "Use the STAR method — Situation, Task, Action, Result — to structure every behavioral answer.",
+      tip: "Use the STAR method — Situation, Task, Action, Result — to structure every Resume from CV and behavioral answer.",
       gradient: "from-blue-500 to-indigo-600",
     },
     {

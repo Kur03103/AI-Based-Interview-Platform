@@ -318,26 +318,49 @@ function Users({ users = [], loading = false, error = '', formatDate, onUserRemo
             className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white/70 backdrop-blur-xl border border-white/60 shadow-md text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
           />
         </div>
-        <motion.button
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.97 }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold shadow-md hover:shadow-lg transition-shadow"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="flex gap-3">
+          <motion.button
+            onClick={() => window.location.href = '/admin'}
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-bold shadow-md hover:shadow-lg transition-shadow"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4.5v15m7.5-7.5h-15"
-            />
-          </svg>
-          Add User
-        </motion.button>
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5V18zm0 2.25h.008v.008H16.5v-.008zm0 2.25h.008v.008H16.5v-.008zm2.25-2.25h.008v.008H18.75V18zm2.25 0h.008v.008H21V18zm-2.25 2.25h.008v.008H18.75v-.008zm2.25 0h.008v.008H21v-.008z"
+              />
+            </svg>
+            Admin Panel
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-bold shadow-md hover:shadow-lg transition-shadow"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4.5v15m7.5-7.5h-15"
+              />
+            </svg>
+            Add User
+          </motion.button>
+        </div>
       </div>
 
       <motion.div
@@ -505,7 +528,7 @@ function Interviews({ interviews = [], loading = false, error = '', formatDate, 
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
                       chooseInterviewType(s) === 'Technical'
                         ? 'bg-blue-100 text-blue-700'
-                        : chooseInterviewType(s) === 'Behavioral'
+                        : chooseInterviewType(s) === 'Resume from CV'
                           ? 'bg-purple-100 text-purple-700'
                           : 'bg-amber-100 text-amber-700'
                     }`}>
@@ -732,7 +755,7 @@ function Analytics({ users = [], interviews = [], resumes = [], chooseInterviewT
 
   const interviewTypes = [
     { label: 'Technical', pct: 0, color: 'from-blue-500 to-indigo-600' },
-    { label: 'Behavioral', pct: 0, color: 'from-purple-500 to-violet-600' },
+    { label: 'Resume from CV', pct: 0, color: 'from-purple-500 to-violet-600' },
   ];
 
   const typeCounts = interviews.reduce(
@@ -1056,6 +1079,8 @@ export default function AdminPanel() {
   const [errorInterviews, setErrorInterviews] = useState("");
   const [errorResumes, setErrorResumes] = useState("");
   const [notifOpen, setNotifOpen] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState("");
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const navigate = useNavigate();
 
   const SECTION_TITLES = {
@@ -1136,7 +1161,7 @@ export default function AdminPanel() {
       return 'Technical';
     }
     if (report.skill_scores && report.skill_scores.empathy_and_self_awareness !== undefined) {
-      return 'Behavioral';
+      return 'Resume from CV';
     }
     return 'Unknown';
   };
@@ -1383,8 +1408,56 @@ export default function AdminPanel() {
               </svg>
               <input
                 placeholder="Quick search..."
+                value={globalSearch}
+                onChange={(e) => {
+                  setGlobalSearch(e.target.value);
+                  setGlobalSearchOpen(e.target.value.length > 0);
+                }}
+                onFocus={() => {
+                  if (globalSearch.length > 0) setGlobalSearchOpen(true);
+                }}
+                onBlur={() => {
+                  setTimeout(() => setGlobalSearchOpen(false), 200);
+                }}
                 className="pl-9 pr-4 py-2 rounded-xl border border-gray-200 bg-white/60 text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-300 w-48"
               />
+              <AnimatePresence>
+                {globalSearchOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute top-full mt-2 w-64 bg-white/90 backdrop-blur-xl border border-gray-200 rounded-xl shadow-xl overflow-hidden z-50 text-sm"
+                  >
+                    {users
+                      .filter(u =>
+                        (u.username || '').toLowerCase().includes(globalSearch.toLowerCase()) ||
+                        (u.email || '').toLowerCase().includes(globalSearch.toLowerCase())
+                      )
+                      .slice(0, 5)
+                      .map(u => (
+                        <div
+                          key={u.id}
+                          className="px-4 py-2 hover:bg-indigo-50 cursor-pointer border-b border-gray-50 flex flex-col"
+                          onClick={() => {
+                            setGlobalSearch("");
+                            setGlobalSearchOpen(false);
+                            setActive("users");
+                          }}
+                        >
+                          <span className="font-bold text-gray-800">{u.username}</span>
+                          <span className="text-xs text-gray-500">{u.email}</span>
+                        </div>
+                      ))}
+                    {users.filter(u =>
+                      (u.username || '').toLowerCase().includes(globalSearch.toLowerCase()) ||
+                      (u.email || '').toLowerCase().includes(globalSearch.toLowerCase())
+                    ).length === 0 && (
+                      <div className="px-4 py-3 text-gray-500 italic">No users found</div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Notification bell */}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 import api from "../api/axios";
 import ThemeToggle from "../components/ThemeToggle";
 
@@ -10,7 +11,7 @@ const InterviewHistory = () => {
   const [selectedReport, setSelectedReport] = useState(null);
 
   const isMounted = React.useRef(true);
-  
+
   useEffect(() => {
     isMounted.current = true;
     fetchReports();
@@ -113,10 +114,21 @@ const InterviewHistory = () => {
               </svg>
             </motion.div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <div className="flex items-center gap-4 mb-2">
+                <Link
+                  to="/home"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 flex items-center gap-2 text-sm font-semibold shadow-sm"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                  </svg>
+                  Back to Dashboard
+                </Link>
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
                 Interview History
               </h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-gray-600 dark:text-gray-400 mt-1">
                 View all your past interview reports and analyses
               </p>
             </div>
@@ -167,7 +179,7 @@ const InterviewHistory = () => {
                       </div>
                       <div>
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                          {report.interview_type === 'technical' ? 'Technical' : 'Behavioral'} Interview
+                          {report.interview_type === 'technical' ? 'Technical' : 'Resume from CV'} Interview
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
                           {formatDate(report.created_at)} • {report.duration} minutes

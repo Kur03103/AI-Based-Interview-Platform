@@ -163,19 +163,19 @@ const Interview = () => {
       // Reset silence timer
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
 
-      if (liveText) {
+        if (liveText) {
         silenceTimerRef.current = setTimeout(() => {
           // If we are muted, do not send anything
           if (isMutedRef.current) return;
 
-          // Time to send after 2 seconds of silence!
+          // Time to send after 1.5 seconds of silence!
           const finalText = accumulatedTranscriptRef.current.trim();
           const textToSend = (finalText + " " + interim).trim();
 
           if (!textToSend) return;
 
           console.log(
-            "[Interview] 2 seconds silence detected, sending:",
+            "[Interview] 1.5 seconds silence detected, sending:",
             textToSend,
           );
 
@@ -193,7 +193,7 @@ const Interview = () => {
             { role: "user", content: textToSend },
           ]);
           handleSendToBackend(textToSend);
-        }, 2000); // 2 seconds of silence
+        }, 1500); // 1.5 seconds of silence
       }
     };
 
@@ -444,7 +444,7 @@ const Interview = () => {
     const d = analysisData;
     const date = new Date().toLocaleString();
     const type =
-      selectedInterviewType === "technical" ? "Technical" : "Resume CV";
+      selectedInterviewType === "technical" ? "Technical" : "Resume from CV";
     const skillKey =
       selectedInterviewType === "technical"
         ? "technical_depth"
@@ -833,7 +833,7 @@ const Interview = () => {
         const average = sum / bufferLength;
 
         // Threshold for detecting sound (adjust if needed)
-        const soundThreshold = 5; // Lower = more sensitive
+        const soundThreshold = 15; // Lower = more sensitive
 
         if (average > soundThreshold) {
           // Sound detected
@@ -843,10 +843,10 @@ const Interview = () => {
           // Silence detected
           const silenceDuration = Date.now() - lastSoundTimeRef.current;
 
-          // If silence for 2 seconds AND we've detected sound before, stop recording
-          if (silenceDuration > 2000 && hasSoundBeenDetected) {
+          // If silence for 1.5 seconds AND we've detected sound before, stop recording
+          if (silenceDuration > 1500 && hasSoundBeenDetected) {
             console.log(
-              "[Interview] 2 seconds of silence detected, auto-stopping",
+              "[Interview] 1.5 seconds of silence detected, auto-stopping",
             );
             clearInterval(silenceDetectionIntervalRef.current);
             silenceDetectionIntervalRef.current = null;
@@ -1313,7 +1313,7 @@ const Interview = () => {
               </div>
             </motion.div>
 
-            {/* Resume CV Interview Card */}
+            {/* Resume from CV Interview Card */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -1344,7 +1344,7 @@ const Interview = () => {
 
                 {/* Title */}
                 <h3 className="text-2xl font-bold mb-3 text-white">
-                  Resume CV Interview
+                  Resume from CV Interview
                 </h3>
                 <p className="text-gray-400 mb-6 leading-relaxed">
                   Practice questions tailored to your resume, job role, and
@@ -1371,14 +1371,14 @@ const Interview = () => {
                 {/* CTA Button */}
                 <button
                   onClick={() => {
-                    console.log("[DEBUG] Resume CV button clicked");
-                    setSelectedInterviewType("behavioral");
+                    console.log("[DEBUG] Resume from CV button clicked");
+                    setSelectedInterviewType("behavioral"); // Keep 'behavioral' for API, rename UI
                     setShowDurationModal(true);
                     console.log("[DEBUG] Modal state set to true");
                   }}
                   className="w-full px-6 py-3 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 rounded-xl font-semibold text-white shadow-lg hover:shadow-pink-500/50 transition-all duration-300 transform hover:scale-[1.02]"
                 >
-                  Start Resume CV Interview
+                  Start Resume from CV Interview
                 </button>
               </div>
             </motion.div>
@@ -1797,7 +1797,7 @@ const Interview = () => {
                 <p className="text-gray-400 text-sm">
                   {selectedInterviewType === "technical"
                     ? "Technical"
-                    : "Resume CV"}{" "}
+                    : "Resume from CV"}{" "}
                   Interview · {selectedDuration} min
                 </p>
               </div>

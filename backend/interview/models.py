@@ -71,6 +71,10 @@ class InterviewReport(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='interview_reports')
     
+    # Session identifiers
+    session_id = models.CharField(max_length=255, blank=True, null=True)
+    interview_type = models.CharField(max_length=50, blank=True, null=True)
+
     # Report data
     overall_score = models.IntegerField()  # 0-100
     duration = models.IntegerField()  # minutes
