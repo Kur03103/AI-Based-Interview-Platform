@@ -67,8 +67,10 @@ class InterviewView(APIView):
         session_id = request.data.get('sessionId') or request.data.get('session_id')
         interview_type = request.data.get('interviewType') or request.data.get('interview_type', 'technical')
         duration = request.data.get('duration', 15)
+        # Resume context passed from the frontend (from the just-uploaded CV)
+        frontend_resume_context = request.data.get('resume_context', None)
 
-        print(f"[Interview API] Received - sessionId: {session_id}, type: {interview_type}, duration: {duration}, message: '{user_message}'")
+        print(f"[Interview API] Received - sessionId: {session_id}, type: {interview_type}, duration: {duration}, message: '{user_message}', has_resume_context: {frontend_resume_context is not None}")
 
         if not session_id:
             return Response(
@@ -85,31 +87,60 @@ class InterviewView(APIView):
 
         # SYSTEM PROMPTS based on interview type
         if interview_type == 'behavioral':
-            # Try to get candidate's resume info AND signup info for behavioral interview
             resume_context = ""
             user = request.user
-            try:
-                from candidates.models import ResumeReport
-                from .models import InterviewSignup
-                
-                # Get latest resume analysis
-                latest_report = ResumeReport.objects.filter(user=user).order_by('-created_at').first()
-                # Get interview signup data (role, experience)
-                signup = InterviewSignup.objects.filter(user=user).first()
-                
-                resume_context = "\n\nCANDIDATE'S PROFILE (Use this to tailor your behavioral questions):\n"
-                
-                if signup:
-                    resume_context += f"- Target Job Role: {signup.job_role or 'Not specified'}\n"
-                    resume_context += f"- Experience Level: {signup.get_experience_level_display() if hasattr(signup, 'get_experience_level_display') else signup.experience_level}\n"
-                
-                if latest_report:
-                    resume_context += f"- Strengths: {', '.join(latest_report.strengths[:5])}\n"
-                    resume_context += f"- Areas for growth: {', '.join(latest_report.weaknesses[:3])}\n"
-                    resume_context += f"- Overall Profile ATS Score: {latest_report.ats_score}%\n"
+
+            # Priority 1: Use resume context from the frontend (just-uploaded CV)
+            if frontend_resume_context and isinstance(frontend_resume_context, dict):
+                resume_context = "\n\nCANDIDATE'S CV PROFILE (Use this to tailor your questions based on their resume):\n"
+                strengths = frontend_resume_context.get('strengths', [])
+                weaknesses = frontend_resume_context.get('weaknesses', [])
+                recommendations = frontend_resume_context.get('recommendations', [])
+                overall_score = frontend_resume_context.get('overall_score', 0)
+                ats_score = frontend_resume_context.get('ats_score', 0)
+                career_fields = frontend_resume_context.get('career_fields', [])
+                file_name = frontend_resume_context.get('file_name', '')
+
+                if file_name:
+                    resume_context += f"- Resume File: {file_name}\n"
+                if strengths:
+                    resume_context += f"- Key Strengths: {', '.join(strengths[:5])}\n"
+                if weaknesses:
+                    resume_context += f"- Areas for Growth: {', '.join(weaknesses[:3])}\n"
+                if career_fields:
+                    fields_str = ', '.join([f.get('field', '') for f in career_fields[:3] if isinstance(f, dict)])
+                    if fields_str:
+                        resume_context += f"- Suggested Career Fields: {fields_str}\n"
+                if overall_score:
+                    resume_context += f"- Overall Resume Score: {overall_score}/100\n"
+                if ats_score:
+                    resume_context += f"- ATS Compatibility Score: {ats_score}/100\n"
+                if recommendations:
+                    resume_context += f"- Key Recommendations: {', '.join(recommendations[:3])}\n"
+
+                print(f"[Interview API] Using frontend resume context for behavioral interview")
+            else:
+                # Priority 2: Fall back to saved resume data from the database
+                try:
+                    from candidates.models import ResumeReport
+                    from .models import InterviewSignup
                     
-            except Exception as e:
-                print(f"[Interview API] Warning: Error fetching resume context: {e}")
+                    latest_report = ResumeReport.objects.filter(user=user).order_by('-created_at').first()
+                    signup = InterviewSignup.objects.filter(user=user).first()
+                    
+                    resume_context = "\n\nCANDIDATE'S PROFILE (Use this to tailor your behavioral questions):\n"
+                    
+                    if signup:
+                        resume_context += f"- Target Job Role: {signup.job_role or 'Not specified'}\n"
+                        resume_context += f"- Experience Level: {signup.get_experience_level_display() if hasattr(signup, 'get_experience_level_display') else signup.experience_level}\n"
+                    
+                    if latest_report:
+                        resume_context += f"- Strengths: {', '.join(latest_report.strengths[:5])}\n"
+                        resume_context += f"- Areas for growth: {', '.join(latest_report.weaknesses[:3])}\n"
+                        resume_context += f"- Overall Profile ATS Score: {latest_report.ats_score}%\n"
+                        
+                except Exception as e:
+                    print(f"[Interview API] Warning: Error fetching resume context: {e}")
 
             system_prompt = (
                 "You are an expert Resume & CV focused interviewer conducting a live audio interview. "
@@ -377,17 +408,22 @@ class AnalyzeInterviewView(APIView):
 
 {type_context}
 
+CRITICAL SCORING RULES:
+1. If the candidate provides extremely short, unhelpful, or no meaningful responses (e.g., total words spoken is very low, or they just say "I don't know", stay silent, etc.), YOU MUST SEVERELY PENALIZE their `overall_score` and `skill_scores`. Their scores should be extremely low (e.g., 10-35).
+2. DO NOT give a high score or generic positive feedback if the candidate barely participated.
+3. If they give bad or empty responses, their strengths should explicitly state "Requires more active participation" or "Minimal engagement", and improvements should focus on "Need to provide detailed responses to questions", "Avoid remaining silent or giving one-word answers".
+
 TRANSCRIPT:
 {transcript_text}
 
 Return this exact JSON structure:
 {{
-  "overall_score": <integer 0-100>,
+  "overall_score": <integer 0-100, heavily penalized if minimal/no response>,
   "tone_analysis": {{
-    "dominant_tone": "<one word: confident|nervous|enthusiastic|hesitant|calm|anxious|assertive|uncertain>",
+    "dominant_tone": "<one word: confident|nervous|enthusiastic|hesitant|calm|anxious|assertive|uncertain|unresponsive>",
     "confidence_score": <integer 0-100>,
     "tone_tags": ["<tag1>", "<tag2>", "<tag3>"],
-    "sentiment": "<positive|neutral|negative>"
+    "sentiment": "<positive|neutral|negative|n/a>"
   }},
   "skill_scores": {{
     "communication": <integer 0-100>,
@@ -483,6 +519,42 @@ def _fallback_analysis(conversation, interview_type, duration, session_id):
     ai_turns = [m for m in conversation if m.get("role") == "ai"]
     total_words = sum(len(m.get("content", "").split()) for m in user_turns)
     avg_words = total_words // max(len(user_turns), 1)
+
+    # Penalize if there's no or almost no response
+    if total_words < 20:
+        return {
+            "overall_score": 25,
+            "tone_analysis": {
+                "dominant_tone": "unresponsive",
+                "confidence_score": 20,
+                "tone_tags": ["silent", "disengaged", "hesitant"],
+                "sentiment": "negative",
+            },
+            "skill_scores": {
+                "communication": 15,
+                "response_quality": 10,
+                "engagement": 10,
+                "technical_depth" if interview_type == "technical" else "empathy_and_self_awareness": 10,
+            },
+            "strengths": [
+                "Attended the interview session"
+            ],
+            "improvements": [
+                "Needs to actively engage with the questions",
+                "Must provide actual, detailed responses rather than remaining silent or using one-word answers",
+                "Practice speaking confidently and elaborating on key points"
+            ],
+            "detailed_feedback": (
+                "The candidate provided little to no substantial responses during the interview. "
+                "It is critical to actively engage with the interviewer and provide detailed examples. "
+                "Without sufficient communication, it is impossible to evaluate skills effectively."
+            ),
+            "session_id": session_id,
+            "interview_type": interview_type,
+            "duration": duration,
+            "question_count": len(ai_turns),
+            "response_count": len(user_turns),
+        }
 
     comm_score = min(100, 50 + avg_words)  # longer answers = better communication proxy
     return {

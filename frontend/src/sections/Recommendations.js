@@ -99,7 +99,7 @@ export default function Recommendations() {
     try {
       const response = await api.post("/api/candidates/recommendations/", {
         skills: skills || inputSkills,
-        top_n: 5,
+        top_n: 10,
       });
 
       setRecommendations(response.data.recommendations || []);

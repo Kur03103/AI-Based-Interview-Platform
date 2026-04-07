@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "../components/ThemeToggle";
 import api from "../api/axios";
@@ -28,6 +29,13 @@ const Interview = () => {
   const [interviewCompleted, setInterviewCompleted] = useState(false);
   const [analysisData, setAnalysisData] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showResumeUploadModal, setShowResumeUploadModal] = useState(false);
+  const [resumeFile, setResumeFile] = useState(null);
+  const [resumeFileName, setResumeFileName] = useState("");
+  const [resumeUploading, setResumeUploading] = useState(false);
+  const [resumeUploadError, setResumeUploadError] = useState("");
+  const [resumeContext, setResumeContext] = useState(null); // Extracted CV data for interview
+  const [isDraggingResume, setIsDraggingResume] = useState(false);
 
   // Refs
   const recognitionRef = useRef(null);
@@ -48,6 +56,7 @@ const Interview = () => {
   const silenceDetectionIntervalRef = useRef(null); // Interval for checking silence
   const lastSoundTimeRef = useRef(0); // Timestamp of last detected sound
   const isMounted = useRef(true);
+  const currentAudioRef = useRef(null); // Track playing Audio element so we can stop it
   
   useEffect(() => {
     isMounted.current = true;
@@ -98,7 +107,16 @@ const Interview = () => {
       const type = location.state.interviewType;
       console.log("[Interview] Received interview type from navigation:", type);
       setSelectedInterviewType(type);
-      setShowDurationModal(true);
+      if (type === "behavioral") {
+        // For CV-based interviews, show resume upload first
+        setResumeFile(null);
+        setResumeFileName("");
+        setResumeUploadError("");
+        setResumeContext(null);
+        setShowResumeUploadModal(true);
+      } else {
+        setShowDurationModal(true);
+      }
       // Clear the navigation state to prevent re-triggering
       navigate(location.pathname, { replace: true, state: {} });
     }
@@ -390,9 +408,21 @@ const Interview = () => {
         recognitionRef.current.stop();
       }
     } catch (e) {}
+    // Stop browser TTS immediately
     try {
       if (synthRef.current) synthRef.current.cancel();
     } catch (e) {}
+    // Stop any playing Audio element
+    try {
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current.src = "";
+        currentAudioRef.current = null;
+      }
+    } catch (e) {
+      console.warn("[Interview] Error stopping audio element", e);
+    }
+    console.log("[Interview] All speech/audio stopped on interview end");
   };
 
   const endInterview = () => {
@@ -912,12 +942,17 @@ const Interview = () => {
     }
 
     try {
-      const response = await api.post("/api/interview/", {
+      const payload = {
         message: message,
         session_id: sessionId,
         interview_type: selectedInterviewType,
         duration: selectedDuration,
-      });
+      };
+      // Attach resume context for CV-based interviews
+      if (selectedInterviewType === "behavioral" && resumeContext) {
+        payload.resume_context = resumeContext;
+      }
+      const response = await api.post("/api/interview/", payload);
       const data = response.data;
       console.log("[Interview] backend response", data);
 
@@ -926,6 +961,13 @@ const Interview = () => {
         if (isMounted.current) {
             setConversation((prev) => [...prev, { role: "ai", content: aiText }]);
             setAiTranscript(aiText);
+        }
+
+        // Don't speak if interview was ended while we were waiting for the API
+        if (!isInterviewActiveRef.current) {
+          console.log("[Interview] Interview ended during API call, skipping TTS");
+          isProcessingRef.current = false;
+          return;
         }
 
         // Use browser TTS
@@ -958,6 +1000,14 @@ const Interview = () => {
   const playAudioFromUrl = (url) =>
     new Promise((resolve) => {
       console.log("[Interview] playAudioFromUrl start", url);
+
+      // Don't play if interview is no longer active
+      if (!isInterviewActiveRef.current) {
+        console.log("[Interview] Interview ended — skipping audio playback");
+        resolve();
+        return;
+      }
+
       // If muted, don't play audio; just resolve and keep mic stopped
       if (isMutedRef.current) {
         console.log("[Interview] Muted — skipping audio playback");
@@ -978,6 +1028,7 @@ const Interview = () => {
       isProcessingRef.current = true;
 
       const audio = new Audio(url);
+      currentAudioRef.current = audio; // Track so we can stop on interview end
       audio.crossOrigin = "anonymous";
       audio.preload = "auto";
 
@@ -1023,6 +1074,14 @@ const Interview = () => {
   const speakResponse = (text) =>
     new Promise((resolve) => {
       if (!synthRef.current) {
+        resolve();
+        return;
+      }
+
+      // Don't speak if interview is no longer active
+      if (!isInterviewActiveRef.current) {
+        console.log("[Interview] Interview ended — skipping TTS");
+        isProcessingRef.current = false;
         resolve();
         return;
       }
@@ -1372,9 +1431,13 @@ const Interview = () => {
                 <button
                   onClick={() => {
                     console.log("[DEBUG] Resume from CV button clicked");
-                    setSelectedInterviewType("behavioral"); // Keep 'behavioral' for API, rename UI
-                    setShowDurationModal(true);
-                    console.log("[DEBUG] Modal state set to true");
+                    setSelectedInterviewType("behavioral");
+                    setResumeFile(null);
+                    setResumeFileName("");
+                    setResumeUploadError("");
+                    setResumeContext(null);
+                    setShowResumeUploadModal(true);
+                    console.log("[DEBUG] Resume upload modal opened");
                   }}
                   className="w-full px-6 py-3 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 rounded-xl font-semibold text-white shadow-lg hover:shadow-pink-500/50 transition-all duration-300 transform hover:scale-[1.02]"
                 >
@@ -1655,6 +1718,202 @@ const Interview = () => {
           </div>
         </div>
       )}
+
+      {/* Resume Upload Modal for CV Interview */}
+      <AnimatePresence>
+        {showResumeUploadModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4"
+            onClick={() => {
+              if (!resumeUploading) {
+                setShowResumeUploadModal(false);
+                setSelectedInterviewType(null);
+              }
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-gray-900/95 backdrop-blur-2xl rounded-3xl p-8 max-w-2xl w-full border border-white/20 shadow-2xl"
+            >
+              {/* Modal Header */}
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-lg shadow-pink-500/30">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">
+                  Upload Your Resume
+                </h2>
+                <p className="text-gray-400">
+                  Upload your CV so the AI interviewer can tailor questions to your background
+                </p>
+              </div>
+
+              {/* Drop Zone */}
+              <div className="mb-6">
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => {
+                    const f = e.target.files[0];
+                    if (f) {
+                      setResumeFile(f);
+                      setResumeFileName(f.name);
+                      setResumeUploadError("");
+                    }
+                  }}
+                  className="hidden"
+                  id="cv-interview-upload"
+                />
+                <label
+                  htmlFor="cv-interview-upload"
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDraggingResume(false);
+                    const f = e.dataTransfer.files[0];
+                    if (f) {
+                      setResumeFile(f);
+                      setResumeFileName(f.name);
+                      setResumeUploadError("");
+                    }
+                  }}
+                  onDragOver={(e) => { e.preventDefault(); setIsDraggingResume(true); }}
+                  onDragLeave={() => setIsDraggingResume(false)}
+                  className={`flex flex-col items-center justify-center w-full px-6 py-10 border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-300 ${
+                    isDraggingResume
+                      ? "border-pink-400 bg-pink-500/10"
+                      : resumeFileName
+                        ? "border-green-400 bg-green-500/10"
+                        : "border-white/20 hover:border-pink-400/50 hover:bg-white/5"
+                  }`}
+                >
+                  {resumeFileName ? (
+                    <div className="flex flex-col items-center">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mb-3 shadow-lg">
+                        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <p className="text-lg font-semibold text-green-400">{resumeFileName}</p>
+                      <p className="text-sm text-gray-500 mt-1">Click to change file</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center mb-3 shadow-lg">
+                        <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                      </div>
+                      <p className="text-base font-semibold text-gray-300">
+                        {isDraggingResume ? "Drop your resume here" : "Click to upload or drag and drop"}
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">PDF, JPG, PNG — up to 10MB</p>
+                    </div>
+                  )}
+                </label>
+              </div>
+
+              {/* Error */}
+              {resumeUploadError && (
+                <div className="mb-4 px-4 py-3 bg-red-500/20 border border-red-500/40 rounded-xl text-red-300 text-sm flex items-center gap-2">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {resumeUploadError}
+                </div>
+              )}
+
+              {/* Uploading loader */}
+              {resumeUploading && (
+                <div className="mb-4 flex flex-col items-center gap-3 py-4">
+                  <div className="w-10 h-10 rounded-full border-4 border-pink-500/30 border-t-pink-500 animate-spin" />
+                  <p className="text-gray-300 text-sm font-medium">Analyzing your resume…</p>
+                  <p className="text-gray-500 text-xs">Extracting skills, experience, and profile data</p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setShowResumeUploadModal(false);
+                    setSelectedInterviewType(null);
+                    setResumeFile(null);
+                    setResumeFileName("");
+                    setResumeUploadError("");
+                  }}
+                  disabled={resumeUploading}
+                  className="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-medium text-white border border-white/20 transition-all duration-300 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!resumeFile) {
+                      setResumeUploadError("Please select a resume file first.");
+                      return;
+                    }
+                    setResumeUploading(true);
+                    setResumeUploadError("");
+                    try {
+                      const formData = new FormData();
+                      formData.append("file", resumeFile);
+                      const response = await axios.post(
+                        "http://127.0.0.1:8000/api/candidates/analyze/",
+                        formData,
+                        { headers: { "Content-Type": "multipart/form-data" } }
+                      );
+                      const data = response.data;
+                      console.log("[Interview] Resume analyzed for interview:", data);
+                      // Store relevant context for the interview
+                      setResumeContext({
+                        strengths: data.strengths || [],
+                        weaknesses: data.weaknesses || [],
+                        recommendations: data.recommendations || [],
+                        overall_score: data.overall_score || 0,
+                        ats_score: data.ats_score || 0,
+                        career_fields: data.career_fields || [],
+                        file_name: resumeFileName,
+                      });
+                      // Close resume modal and open duration modal
+                      setShowResumeUploadModal(false);
+                      setShowDurationModal(true);
+                    } catch (err) {
+                      console.error("[Interview] Resume analysis error:", err);
+                      setResumeUploadError(
+                        err.response?.data?.error ||
+                        err.response?.data?.details ||
+                        "Failed to analyze resume. Please try again."
+                      );
+                    } finally {
+                      setResumeUploading(false);
+                    }
+                  }}
+                  disabled={!resumeFile || resumeUploading}
+                  className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 ${
+                    resumeFile && !resumeUploading
+                      ? "bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white shadow-lg hover:shadow-pink-500/50"
+                      : "bg-gray-700 text-gray-500 cursor-not-allowed"
+                  }`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  Submit & Continue
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Duration Selection Modal - Rendered at root level for proper z-index stacking */}
       <AnimatePresence>

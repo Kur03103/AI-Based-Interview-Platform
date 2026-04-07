@@ -87,6 +87,23 @@ The JSON structure MUST be exactly as follows:
         "Add a summary section highlighting key achievements",
         "Reorganize skills by proficiency level or category"
     ],
+    "career_fields": [
+        {
+            "field": "Backend Development",
+            "match": 92,
+            "reason": "Strong Python, Django, and REST API experience aligns perfectly with backend roles"
+        },
+        {
+            "field": "Data Engineering",
+            "match": 78,
+            "reason": "SQL and Python skills with data pipeline experience make this a natural fit"
+        },
+        {
+            "field": "DevOps Engineering",
+            "match": 65,
+            "reason": "Docker and CI/CD knowledge provides a good foundation, but needs more cloud experience"
+        }
+    ],
     "improved_bullet_example": "Before: 'Worked on API development'\\nAfter: 'Architected and deployed RESTful APIs handling 10M+ daily requests, reducing response time by 35% and improving system reliability to 99.9% uptime'"
 }
 
@@ -103,6 +120,7 @@ ANALYSIS RULES:
 4. Make recommendations practical and implementable
 5. Use the improved_bullet_example to show concrete improvement
 6. Consider format, content, keywords, achievements, and clarity
+7. For career_fields, suggest 3-5 career paths the candidate is best suited for based on their skills, experience, and education. Include a match percentage (0-100) and a brief reason explaining why they fit that field
 
 Analyze the following resume text:
 """

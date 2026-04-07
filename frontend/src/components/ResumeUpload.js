@@ -485,50 +485,6 @@ export default function ResumeUpload() {
               </motion.div>
             </div>
 
-            {/* Job Recommendations */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl shadow-xl border border-indigo-200/50 p-8"
-            >
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-7 h-7 text-white"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-                    />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-1">
-                    Get Job Recommendations
-                  </h3>
-                  <p className="text-gray-600">
-                    Based on your skills, get personalized job matches
-                  </p>
-                </div>
-              </div>
-              <p className="text-gray-700 mb-6">
-                Visit the Recommendations section to discover job opportunities
-                that match your profile and get insights on your resume quality.
-              </p>
-              <button
-                onClick={() => (window.location.href = "#recommendations")}
-                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
-              >
-                View Recommendations →
-              </button>
-            </motion.div>
-
             {/* Strengths and Weaknesses */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Strengths */}
@@ -668,6 +624,84 @@ export default function ResumeUpload() {
                 </pre>
               </div>
             </motion.div>
+
+            {/* Career Fields / Suggested Paths */}
+            {analysis.career_fields && analysis.career_fields.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl shadow-xl border border-indigo-200/50 p-6"
+              >
+                <h3 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-6 h-6 text-indigo-600"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.58-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"
+                    />
+                  </svg>
+                  Suggested Career Paths
+                </h3>
+                <p className="text-sm text-gray-500 mb-5">
+                  Based on your skills and experience, here are the fields you can pursue
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {analysis.career_fields.map((career, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-gray-100 hover:shadow-lg transition-all hover:-translate-y-1"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-bold text-gray-900 text-sm">
+                          {career.field}
+                        </h4>
+                        <span
+                          className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                            career.match >= 80
+                              ? "bg-green-100 text-green-700"
+                              : career.match >= 60
+                                ? "bg-blue-100 text-blue-700"
+                                : career.match >= 40
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {career.match}%
+                        </span>
+                      </div>
+                      {/* Progress bar */}
+                      <div className="w-full bg-gray-100 rounded-full h-2 mb-3">
+                        <div
+                          className={`h-2 rounded-full transition-all duration-500 ${
+                            career.match >= 80
+                              ? "bg-gradient-to-r from-green-400 to-emerald-500"
+                              : career.match >= 60
+                                ? "bg-gradient-to-r from-blue-400 to-indigo-500"
+                                : career.match >= 40
+                                  ? "bg-gradient-to-r from-yellow-400 to-orange-500"
+                                  : "bg-gradient-to-r from-gray-400 to-gray-500"
+                          }`}
+                          style={{ width: `${career.match}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        {career.reason}
+                      </p>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
             {/* View History Button */}
             <motion.div

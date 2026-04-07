@@ -33,7 +33,7 @@ class RecommendationService:
             print(f"Error loading model: {str(e)}")
             return None
     
-    def get_job_recommendations(self, candidate_skills, top_n=5):
+    def get_job_recommendations(self, candidate_skills, top_n=10):
         """
         Get job recommendations based on candidate skills
         
@@ -70,10 +70,10 @@ class RecommendationService:
                 job = job_profiles.iloc[idx]
                 match_score = float(similarities[idx])
                 
-                # Only include if match score is reasonable
-                if match_score > 0.01:  # Minimum threshold
+                # Very low threshold so even a single skill match shows results
+                if match_score > 0.001:
                     # Handle column names with BOM character
-                    job_title = job.get('job_position_name', job.get('﻿job_position_name', 'N/A'))
+                    job_title = job.get('job_position_name', job.get('\ufeffjob_position_name', 'N/A'))
                     recommendations.append({
                         'job_title': job_title,
                         'match_score': round(match_score * 100, 2),
