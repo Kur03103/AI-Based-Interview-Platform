@@ -16,14 +16,21 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.metrics.pairwise import cosine_similarity
 from scipy.sparse import hstack
-import matplotlib.pyplot as plt
-import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
 
-# Set style for visualizations
-sns.set_style("whitegrid")
-plt.rcParams['figure.figsize'] = (12, 8)
+try:
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    HAS_VIS = True
+except ImportError:
+    HAS_VIS = False
+    print("⚠ Visualization libraries (matplotlib/seaborn) not found. Skipping visualizations.")
+
+if HAS_VIS:
+    # Set style for visualizations
+    sns.set_style("whitegrid")
+    plt.rcParams['figure.figsize'] = (12, 8)
 
 # Create Images directory if it doesn't exist
 os.makedirs('Images', exist_ok=True)
@@ -140,8 +147,15 @@ if 'matched_score' in df.columns:
     df['match_category'] = pd.cut(df['matched_score'], 
                                    bins=[0, 0.4, 0.6, 0.8, 1.0],
                                    labels=['Low', 'Medium', 'High', 'Excellent'])
+    
+    # Ensure labels are clean for classification report
+    df['match_category'] = df['match_category'].astype(str)
+    df = df[df['match_category'] != 'nan']
+    df = df[df['match_category'] != '']
+    
     print("  ✓ Match score categories created")
     print(f"    Distribution:\n{df['match_category'].value_counts()}")
+    print(f"    Actual Classes: {df['match_category'].unique()}")
 
 # ============================================
 # PHASE 4: FEATURE EXTRACTION (TF-IDF)
@@ -232,7 +246,8 @@ print(f"  • Training Accuracy: {train_accuracy:.4f} ({train_accuracy*100:.2f}%
 print(f"  • Test Accuracy: {test_accuracy:.4f} ({test_accuracy*100:.2f}%)")
 
 print("\n📈 Classification Report:")
-print(classification_report(y_test, y_pred_test, target_names=le.classes_))
+target_names = [str(c) for c in le.classes_]
+print(classification_report(y_test, y_pred_test, target_names=target_names))
 
 # ============================================
 # PHASE 7: BUILD RECOMMENDATION SYSTEM
@@ -244,16 +259,18 @@ print("=" * 60)
 print("Building job recommendation system...")
 
 # Create job profiles
-job_profiles = df[['﻿job_position_name', 'skills_required_cleaned', 'responsibilities', 
+job_profiles = df[['﻿job_position_name', 'skills_required_cleaned', 'responsibilities', 'responsibilities_cleaned',
                     'educationaL_requirements', 'experiencere_requirement']].copy()
 job_profiles = job_profiles.drop_duplicates(subset=['﻿job_position_name'])
 job_profiles = job_profiles.reset_index(drop=True)
 
 print(f"  ✓ Created {len(job_profiles)} unique job profiles")
 
-# Create job-skill matrix
-job_skills_matrix = tfidf_skills.transform(job_profiles['skills_required_cleaned'].fillna(''))
-print(f"  ✓ Job-skill matrix created: {job_skills_matrix.shape}")
+# Create job-skill matrix using both skills and responsibilities to ensure results for every job
+# We combine them so that jobs with "0" in skills_required_cleaned still have descriptive text from responsibilities
+job_content = job_profiles['skills_required_cleaned'].fillna('') + ' ' + job_profiles['responsibilities_cleaned'].fillna('')
+job_skills_matrix = tfidf_skills.transform(job_content)
+print(f"  ✓ Job-skill matrix created (using skills + responsibilities): {job_skills_matrix.shape}")
 
 # ============================================
 # PHASE 8: ANALYTICS & VISUALIZATIONS
@@ -271,104 +288,109 @@ for skills in df['skills_list']:
 skills_series = pd.Series(all_skills_list)
 top_skills = skills_series.value_counts().head(20)
 
-plt.figure(figsize=(14, 8))
-top_skills.plot(kind='barh', color='steelblue', edgecolor='navy')
-plt.xlabel('Frequency', fontsize=12, fontweight='bold')
-plt.ylabel('Skills', fontsize=12, fontweight='bold')
-plt.title('Top 20 Most Demanded Skills', fontsize=16, fontweight='bold', pad=20)
-plt.gca().invert_yaxis()
-plt.tight_layout()
-plt.savefig('Images/1_top_skills_distribution.png', dpi=300, bbox_inches='tight')
-plt.close()
-print("  ✓ Saved: Images/1_top_skills_distribution.png")
+if HAS_VIS:
+    plt.figure(figsize=(14, 8))
+    top_skills.plot(kind='barh', color='steelblue', edgecolor='navy')
+    plt.xlabel('Frequency', fontsize=12, fontweight='bold')
+    plt.ylabel('Skills', fontsize=12, fontweight='bold')
+    plt.title('Top 20 Most Demanded Skills', fontsize=16, fontweight='bold', pad=20)
+    plt.gca().invert_yaxis()
+    plt.tight_layout()
+    plt.savefig('Images/1_top_skills_distribution.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print("  ✓ Saved: Images/1_top_skills_distribution.png")
 
 # Visualization 2: Match Score Distribution
 print("Creating Visualization 2: Match Score Distribution...")
-plt.figure(figsize=(12, 8))
-plt.subplot(2, 1, 1)
-df['matched_score'].hist(bins=30, color='coral', edgecolor='darkred', alpha=0.7)
-plt.xlabel('Match Score', fontsize=12, fontweight='bold')
-plt.ylabel('Frequency', fontsize=12, fontweight='bold')
-plt.title('Distribution of Match Scores', fontsize=14, fontweight='bold')
-plt.grid(axis='y', alpha=0.3)
+if HAS_VIS:
+    plt.figure(figsize=(12, 8))
+    plt.subplot(2, 1, 1)
+    df['matched_score'].hist(bins=30, color='coral', edgecolor='darkred', alpha=0.7)
+    plt.xlabel('Match Score', fontsize=12, fontweight='bold')
+    plt.ylabel('Frequency', fontsize=12, fontweight='bold')
+    plt.title('Distribution of Match Scores', fontsize=14, fontweight='bold')
+    plt.grid(axis='y', alpha=0.3)
 
-plt.subplot(2, 1, 2)
-match_category_counts = df['match_category'].value_counts()
-colors = ['#ff6b6b', '#ffd93d', '#6bcf7f', '#4ecdc4']
-match_category_counts.plot(kind='bar', color=colors, edgecolor='black')
-plt.xlabel('Match Category', fontsize=12, fontweight='bold')
-plt.ylabel('Count', fontsize=12, fontweight='bold')
-plt.title('Candidates by Match Category', fontsize=14, fontweight='bold')
-plt.xticks(rotation=0)
-plt.tight_layout()
-plt.savefig('Images/2_match_score_distribution.png', dpi=300, bbox_inches='tight')
-plt.close()
-print("  ✓ Saved: Images/2_match_score_distribution.png")
+    plt.subplot(2, 1, 2)
+    match_category_counts = df['match_category'].value_counts()
+    colors = ['#ff6b6b', '#ffd93d', '#6bcf7f', '#4ecdc4']
+    match_category_counts.plot(kind='bar', color=colors, edgecolor='black')
+    plt.xlabel('Match Category', fontsize=12, fontweight='bold')
+    plt.ylabel('Count', fontsize=12, fontweight='bold')
+    plt.title('Candidates by Match Category', fontsize=14, fontweight='bold')
+    plt.xticks(rotation=0)
+    plt.tight_layout()
+    plt.savefig('Images/2_match_score_distribution.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print("  ✓ Saved: Images/2_match_score_distribution.png")
 
 # Visualization 3: Education & Experience Analysis
 print("Creating Visualization 3: Education & Experience Analysis...")
-plt.figure(figsize=(14, 8))
+if HAS_VIS:
+    plt.figure(figsize=(14, 8))
 
-plt.subplot(1, 2, 1)
-degree_counts = df['degree_names_cleaned'].value_counts().head(10)
-degree_counts.plot(kind='pie', autopct='%1.1f%%', startangle=90, 
-                   colors=sns.color_palette('pastel'))
-plt.title('Top 10 Degree Distributions', fontsize=14, fontweight='bold', pad=20)
-plt.ylabel('')
+    plt.subplot(1, 2, 1)
+    degree_counts = df['degree_names_cleaned'].value_counts().head(10)
+    degree_counts.plot(kind='pie', autopct='%1.1f%%', startangle=90, 
+                       colors=sns.color_palette('pastel'))
+    plt.title('Top 10 Degree Distributions', fontsize=14, fontweight='bold', pad=20)
+    plt.ylabel('')
 
-plt.subplot(1, 2, 2)
-exp_level_counts = df['experience_level'].value_counts().sort_index()
-plt.bar(exp_level_counts.index, exp_level_counts.values, color='teal', edgecolor='black')
-plt.xlabel('Experience Level (Number of Positions)', fontsize=12, fontweight='bold')
-plt.ylabel('Count', fontsize=12, fontweight='bold')
-plt.title('Experience Level Distribution', fontsize=14, fontweight='bold')
-plt.tight_layout()
-plt.savefig('Images/3_education_experience_analysis.png', dpi=300, bbox_inches='tight')
-plt.close()
-print("  ✓ Saved: Images/3_education_experience_analysis.png")
+    plt.subplot(1, 2, 2)
+    exp_level_counts = df['experience_level'].value_counts().sort_index()
+    plt.bar(exp_level_counts.index, exp_level_counts.values, color='teal', edgecolor='black')
+    plt.xlabel('Experience Level (Number of Positions)', fontsize=12, fontweight='bold')
+    plt.ylabel('Count', fontsize=12, fontweight='bold')
+    plt.title('Experience Level Distribution', fontsize=14, fontweight='bold')
+    plt.tight_layout()
+    plt.savefig('Images/3_education_experience_analysis.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print("  ✓ Saved: Images/3_education_experience_analysis.png")
 
 # Visualization 4: Confusion Matrix
 print("Creating Visualization 4: Model Confusion Matrix...")
-plt.figure(figsize=(10, 8))
-cm = confusion_matrix(y_test, y_pred_test)
-sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-            xticklabels=le.classes_, yticklabels=le.classes_,
-            cbar_kws={'label': 'Count'})
-plt.xlabel('Predicted Category', fontsize=12, fontweight='bold')
-plt.ylabel('Actual Category', fontsize=12, fontweight='bold')
-plt.title(f'Confusion Matrix - Test Accuracy: {test_accuracy*100:.2f}%', 
-          fontsize=14, fontweight='bold', pad=20)
-plt.tight_layout()
-plt.savefig('Images/4_confusion_matrix.png', dpi=300, bbox_inches='tight')
-plt.close()
-print("  ✓ Saved: Images/4_confusion_matrix.png")
+if HAS_VIS:
+    plt.figure(figsize=(10, 8))
+    cm = confusion_matrix(y_test, y_pred_test)
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
+                xticklabels=le.classes_, yticklabels=le.classes_,
+                cbar_kws={'label': 'Count'})
+    plt.xlabel('Predicted Category', fontsize=12, fontweight='bold')
+    plt.ylabel('Actual Category', fontsize=12, fontweight='bold')
+    plt.title(f'Confusion Matrix - Test Accuracy: {test_accuracy*100:.2f}%', 
+              fontsize=14, fontweight='bold', pad=20)
+    plt.tight_layout()
+    plt.savefig('Images/4_confusion_matrix.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print("  ✓ Saved: Images/4_confusion_matrix.png")
 
 # Visualization 5: Job Positions & Skills Required Analysis
 print("Creating Visualization 5: Job Positions Analysis...")
-plt.figure(figsize=(14, 10))
+if HAS_VIS:
+    plt.figure(figsize=(14, 10))
 
-# Top job positions
-plt.subplot(2, 1, 1)
-job_position_counts = df['﻿job_position_name'].value_counts().head(15)
-job_position_counts.plot(kind='barh', color='purple', alpha=0.7, edgecolor='darkviolet')
-plt.xlabel('Number of Candidates', fontsize=12, fontweight='bold')
-plt.ylabel('Job Position', fontsize=12, fontweight='bold')
-plt.title('Top 15 Job Positions', fontsize=14, fontweight='bold')
-plt.gca().invert_yaxis()
+    # Top job positions
+    plt.subplot(2, 1, 1)
+    job_position_counts = df['﻿job_position_name'].value_counts().head(15)
+    job_position_counts.plot(kind='barh', color='purple', alpha=0.7, edgecolor='darkviolet')
+    plt.xlabel('Number of Candidates', fontsize=12, fontweight='bold')
+    plt.ylabel('Job Position', fontsize=12, fontweight='bold')
+    plt.title('Top 15 Job Positions', fontsize=14, fontweight='bold')
+    plt.gca().invert_yaxis()
 
-# Skills vs Match Score correlation
-plt.subplot(2, 1, 2)
-skill_match_relation = df.groupby('skills_count')['matched_score'].mean().sort_index()
-plt.plot(skill_match_relation.index, skill_match_relation.values, 
-         marker='o', linewidth=2, markersize=8, color='green')
-plt.xlabel('Number of Skills', fontsize=12, fontweight='bold')
-plt.ylabel('Average Match Score', fontsize=12, fontweight='bold')
-plt.title('Relationship: Skills Count vs Match Score', fontsize=14, fontweight='bold')
-plt.grid(True, alpha=0.3)
-plt.tight_layout()
-plt.savefig('Images/5_job_positions_analysis.png', dpi=300, bbox_inches='tight')
-plt.close()
-print("  ✓ Saved: Images/5_job_positions_analysis.png")
+    # Skills vs Match Score correlation
+    plt.subplot(2, 1, 2)
+    skill_match_relation = df.groupby('skills_count')['matched_score'].mean().sort_index()
+    plt.plot(skill_match_relation.index, skill_match_relation.values, 
+             marker='o', linewidth=2, markersize=8, color='green')
+    plt.xlabel('Number of Skills', fontsize=12, fontweight='bold')
+    plt.ylabel('Average Match Score', fontsize=12, fontweight='bold')
+    plt.title('Relationship: Skills Count vs Match Score', fontsize=14, fontweight='bold')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig('Images/5_job_positions_analysis.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print("  ✓ Saved: Images/5_job_positions_analysis.png")
 
 print("\n✓ All 5 visualizations created successfully in 'Images/' folder")
 

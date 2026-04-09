@@ -208,6 +208,6 @@
     "High",
     "Low",
     "Medium",
-    "nan"
+    NaN
   ]
 }
