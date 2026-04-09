@@ -4,8 +4,13 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 import requests
-from .serializers import RegisterSerializer, UserSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer
+from .serializers import (
+    RegisterSerializer, UserSerializer, 
+    PasswordResetRequestSerializer, PasswordResetConfirmSerializer,
+    EmailTokenObtainPairSerializer
+)
 from .models import CustomUser, PasswordResetOTP
 from django.core.mail import send_mail
 
@@ -15,6 +20,12 @@ def get_tokens_for_user(user):
         'refresh': str(refresh),
         'access': str(refresh.access_token),
     }
+
+class EmailTokenObtainPairView(TokenObtainPairView):
+    """
+    Custom JWT login view that uses the email/username flexible serializer.
+    """
+    serializer_class = EmailTokenObtainPairSerializer
 
 class RegisterView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()

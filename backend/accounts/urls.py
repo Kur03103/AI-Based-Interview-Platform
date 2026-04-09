@@ -6,7 +6,8 @@ from rest_framework_simplejwt.views import (
 from .views import (
     RegisterView, UserProfileView, LogoutView, 
     AdminUserListView, AdminUserDetailView,
-    GoogleLoginInitiate, GoogleCallback, ForgotPasswordView, PasswordResetConfirmView
+    GoogleLoginInitiate, GoogleCallback, ForgotPasswordView, PasswordResetConfirmView,
+    EmailTokenObtainPairView
 )
 
 urlpatterns = [

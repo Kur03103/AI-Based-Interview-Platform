@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.db.models import Q
 from .models import CustomUser
 
 class UserSerializer(serializers.ModelSerializer):
@@ -100,3 +102,24 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
             raise serializers.ValidationError({"new_password": list(e.messages)})
             
         return attrs
+
+class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Custom serializer to allow login with either email or username.
+    """
+    def validate(self, attrs):
+        # The standard view sends 'username' and 'password' in the request payload
+        # but we want to allow 'username' to be either the username string or email string.
+        login_id = attrs.get("username")
+        password = attrs.get("password")
+
+        # Try to find user by email or username
+        user = CustomUser.objects.filter(
+            Q(email=login_id) | Q(username=login_id)
+        ).first()
+
+        if user:
+            # Override 'username' with the actual username needed by SimpleJWT/Django
+            attrs["username"] = user.username
+        
+        return super().validate(attrs)
