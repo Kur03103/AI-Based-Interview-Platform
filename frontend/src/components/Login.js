@@ -1,11 +1,13 @@
 import React, { useState, forwardRef } from "react";
 import { useAuth } from "../context/AuthContext";
+import ForgotPasswordModal from "./ForgotPasswordModal";
 
 const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
     const { forgotPassword } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -37,26 +39,13 @@ const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
   };
 
 
-  const handleForgotPassword = async (e) => {
+  const handleForgotPassword = (e) => {
     e.preventDefault();
-    if (!username) {
-        setError("Please enter your email/username first.");
-        return;
-    }
-    setError("");
-    try {
-        const response = await forgotPassword(username);
-        alert(response.message || "Password reset instructions sent.");
-    } catch (err) {
-        if (err.response && err.response.data && err.response.data.auth_provider === 'google') {
-            setError("You signed up using Google. Please login with Google instead.");
-        } else {
-            setError(err.response?.data?.error || "Failed to process forgot password.");
-        }
-    }
+    setIsResetModalOpen(true);
   };
 
   return (
+    <>
     <form ref={ref} onSubmit={handleLogin} className="space-y-6 p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md mx-auto">
       <div>
         <label
@@ -164,6 +153,12 @@ const Login = forwardRef(({ onLogin, onSwitchToSignup }, ref) => {
         </div>
       </div>
     </form>
+    <ForgotPasswordModal 
+        isOpen={isResetModalOpen} 
+        onClose={() => setIsResetModalOpen(false)} 
+        initialEmail={username.includes('@') ? username : ''}
+    />
+    </>
   );
 });
 

@@ -6,7 +6,7 @@ from rest_framework_simplejwt.views import (
 from .views import (
     RegisterView, UserProfileView, LogoutView, 
     AdminUserListView, AdminUserDetailView,
-    GoogleLoginInitiate, GoogleCallback, ForgotPasswordView
+    GoogleLoginInitiate, GoogleCallback, ForgotPasswordView, PasswordResetConfirmView
 )
 
 urlpatterns = [
@@ -24,6 +24,7 @@ urlpatterns = [
     
     # Forgot Password
     path('forgot-password/', ForgotPasswordView.as_view(), name='forgot_password'),
+    path('password-reset-confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
 
     path('admin/users/', AdminUserListView.as_view(), name='admin_users'),
     path('admin/users/<int:pk>/', AdminUserDetailView.as_view(), name='admin_user_detail'),

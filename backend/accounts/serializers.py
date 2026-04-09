@@ -66,3 +66,37 @@ class RegisterSerializer(serializers.ModelSerializer):
             age=validated_data.get('age')
         )
         return user
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, value):
+        try:
+            user = CustomUser.objects.get(email=value)
+            if user.auth_provider == 'google':
+                raise serializers.ValidationError("Password reset is not available for Google sign-in accounts.")
+        except CustomUser.DoesNotExist:
+            # We don't want to leak whether an email exists or not usually, 
+            # but per requirements we need to handle specific logic.
+            # However, standard practice is to return success anyway.
+            # But the user specifically asked for "return error response: 'Password reset is not available for Google sign-in accounts.'"
+            # So I will raise validation error for google.
+            pass
+        return value
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(max_length=6)
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['confirm_password']:
+            raise serializers.ValidationError({"confirm_password": "Passwords do not match."})
+        
+        try:
+            validate_password(attrs['new_password'])
+        except ValidationError as e:
+            raise serializers.ValidationError({"new_password": list(e.messages)})
+            
+        return attrs

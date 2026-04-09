@@ -99,6 +99,16 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const resetPassword = async (resetData) => {
+        try {
+            const response = await api.post('/api/auth/password-reset-confirm/', resetData);
+            return response.data;
+        } catch (error) {
+            console.error("Password reset failed", error);
+            throw error;
+        }
+    };
+
     const register = async (userData) => {
         try {
             await api.post('/api/auth/register/', userData);
@@ -123,7 +133,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ auth, login, register, logout, loginWithTokens, forgotPassword }}>
+        <AuthContext.Provider value={{ auth, login, register, logout, loginWithTokens, forgotPassword, resetPassword }}>
             {children}
         </AuthContext.Provider>
     );
