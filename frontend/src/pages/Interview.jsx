@@ -805,11 +805,11 @@ const Interview = () => {
           return;
         }
 
-        // Only send if we have actual audio data
-        if (blob.size > 0) {
+        // Only send if we have actual audio data AND sound was actually detected
+        if (blob.size > 0 && recorder.hasSound) {
           await sendRecordedAudioToBackend(blob);
         } else {
-          console.warn("[Interview] No audio data recorded");
+          console.warn("[Interview] No valid speech detected in recording, skipping process");
           isProcessingRef.current = false;
           setStatus("Listening");
           // Restart recording if still active
@@ -863,20 +863,23 @@ const Interview = () => {
         const average = sum / bufferLength;
 
         // Threshold for detecting sound (adjust if needed)
-        const soundThreshold = 15; // Lower = more sensitive
+        const soundThreshold = 18; // Slightly higher threshold to ignore background hum
 
         if (average > soundThreshold) {
           // Sound detected
           lastSoundTimeRef.current = Date.now();
           hasSoundBeenDetected = true;
+          // Set a flag on the recorder that we've heard something
+          if (mediaRecorderRef.current) mediaRecorderRef.current.hasSound = true;
         } else {
           // Silence detected
           const silenceDuration = Date.now() - lastSoundTimeRef.current;
 
-          // If silence for 1.5 seconds AND we've detected sound before, stop recording
-          if (silenceDuration > 1500 && hasSoundBeenDetected) {
+          // If silence for 2.0 seconds AND we've detected sound before, stop recording
+          // 1.5s was too short, let's try 2.0s for Resume interview comfort
+          if (silenceDuration > 2000 && hasSoundBeenDetected) {
             console.log(
-              "[Interview] 1.5 seconds of silence detected, auto-stopping",
+              "[Interview] 2.0 seconds of silence detected, auto-stopping",
             );
             clearInterval(silenceDetectionIntervalRef.current);
             silenceDetectionIntervalRef.current = null;
