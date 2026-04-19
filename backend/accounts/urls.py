@@ -12,7 +12,7 @@ from .views import (
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='auth_register'),
-    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('login/', EmailTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('user/', UserProfileView.as_view(), name='auth_user'), # Added /user/ as requested
     path('me/', UserProfileView.as_view(), name='auth_me'),
